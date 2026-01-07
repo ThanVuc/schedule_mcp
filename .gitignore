@@ -1,1 +1,11 @@
 configs/*
+# Python
+__pycache__/
+*.pyc
+
+# Poetry / venv
+.venv/
+venv/
+
+# Env
+.env
