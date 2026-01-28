@@ -1,14 +1,12 @@
 from pydantic_settings import BaseSettings
 import yaml
 
-from application.settings import DatabaseSettings, EmbedderSettings, LLMSettings, MQSettings
+from application.settings import LLMSettings, MQSettings
 
 class Settings(BaseSettings):
     env: str
-    databases: DatabaseSettings
     mq: MQSettings
     llm: LLMSettings
-    embedder: EmbedderSettings
 
     @classmethod
     def from_yaml(cls, path: str):
