@@ -7,13 +7,15 @@ from application.di import DIContainer
 
 async def BootstrapApplication():
     di = DIContainer()    
-    di.wire()
+    await di.wire()
     logging.info("Starting application bootstrap...")
 
 
     # run consumers
     interface = di.interface_container
     await interface.consumer_interface.run_all()
+
+    infra = di.infrastructure_container
 
     # keep the application running
     stop_event = asyncio.Event()
