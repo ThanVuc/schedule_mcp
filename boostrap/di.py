@@ -4,7 +4,7 @@ from infrastructure import InfrastructureContainer
 from infrastructure.base.configuration.settings import InitSettings, Settings
 from infrastructure.base.logging.config import setup_logging
 from interface import InterfaceContainer
-from interface.consumer import WorkGenerationConsumer
+from interface.consumer import SprintGenerationConsumer, WorkGenerationConsumer
 
 
 class DIContainer:
@@ -26,14 +26,14 @@ class DIContainer:
         if self.__settings is None:
             self.__settings = InitSettings()
         return self.__settings
-    
+
     @property
     def infrastructure_container(self) -> InfrastructureContainer:
         """Lazy load and cache infrastructure container"""
         if self.__infrastructure is None:
             self.__infrastructure = InfrastructureContainer(settings=self.settings)
         return self.__infrastructure
-    
+
     @property
     def interface_container(self) -> InterfaceContainer:
         """Lazy load and cache interface container"""
@@ -41,7 +41,7 @@ class DIContainer:
             self.__interface = InterfaceContainer()
 
         return self.__interface
-    
+
     @property
     def application_container(self) -> ApplicationContainer:
         if self.__application is None:
@@ -62,8 +62,15 @@ class DIContainer:
             work_generation_usecase=self.application_container.usecase_container.work_generation_usecase,
             notification_publisher=self.application_container.publisher_container.notification_publisher,
         )
-        
+
+        # sprint generation consumer (Team -> AI)
+        sprint_consumer = SprintGenerationConsumer(
+            mq_connector=infrastructure.get_mq_connector(),
+            sprint_generation_usecase=self.application_container.usecase_container.sprint_generation_usecase,
+        )
+
         interface.consumer_interface.add_consumer(work_consumer)
+        interface.consumer_interface.add_consumer(sprint_consumer)
 
         self.__consumers_registered = True
 

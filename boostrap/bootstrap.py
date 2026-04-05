@@ -3,24 +3,22 @@ import logging
 import signal
 import sys
 
-from application.di import DIContainer
+from .di import DIContainer
+
 
 async def BootstrapApplication():
-    di = DIContainer()    
+    di = DIContainer()
     await di.wire()
     logging.info("Starting application bootstrap...")
-
 
     # run consumers
     interface = di.interface_container
     await interface.consumer_interface.run_all()
 
-    infra = di.infrastructure_container
-
     # keep the application running
     stop_event = asyncio.Event()
 
-    if sys.platform != "win32": # type: ignore
+    if sys.platform != "win32":  # type: ignore
         # Linux / Mac: dùng signal handler
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
