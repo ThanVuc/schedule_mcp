@@ -98,3 +98,8 @@ class DIContainer:
 
         # wire consumers
         await self._wire_consumer()
+
+    async def shutdown(self):
+        if self.__infrastructure is None:
+            return
+        await self.__infrastructure.close()

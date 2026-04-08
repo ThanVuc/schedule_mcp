@@ -5,3 +5,6 @@ from infrastructure.base.llm.gemini_llm import LLMConnector
 class LLMContainer:
     def __init__(self, llm_settings: LLMSettings):
         self.llm_connector = LLMConnector(llm_settings)
+
+    async def close(self) -> None:
+        await self.llm_connector.close()

@@ -1,0 +1,305 @@
+{
+  "features": [
+    {
+      "id": "F1",
+      "type": "feature",
+      "title": "Sinh Sprint và Work bằng AI",
+      "description": "Sử dụng AI để phân tích các file tài liệu đầu vào nhằm tự động tạo ra Sprint và danh sách các công việc đi kèm.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C1"
+    },
+    {
+      "id": "F2",
+      "type": "feature",
+      "title": "Bổ sung ngữ cảnh (Additional Context)",
+      "description": "Cho phép người dùng thêm các chỉ dẫn hoặc ngữ cảnh bổ sung để AI có thể tạo công việc theo phong cách hoặc yêu cầu riêng biệt của nhóm.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C2"
+    },
+    {
+      "id": "F3",
+      "type": "feature",
+      "title": "Xem trước và Chỉnh sửa",
+      "description": "Kết quả từ AI phải được hiển thị dưới dạng bản xem trước (Preview) để người dùng có thể kiểm tra và chỉnh sửa trước khi lưu chính thức vào hệ thống.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C3"
+    },
+    {
+      "id": "F4",
+      "type": "feature",
+      "title": "Xuất dữ liệu (Export)",
+      "description": "Hỗ trợ tính năng xuất danh sách công việc (Work list) theo sprint ra định dạng file Excel.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C4"
+    },
+    {
+      "id": "F5",
+      "type": "feature",
+      "title": "Phân quyền thực hiện",
+      "description": "Chỉ những người dùng có vai trò Owner hoặc Manager mới được phép sử dụng các tính năng AI để lập kế hoạch.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C5"
+    },
+    {
+      "id": "F6",
+      "type": "feature",
+      "title": "Sprint Burndown Analysis",
+      "description": "System for tracking sprint progress using story points, comparing actual completion against ideal burndown metrics.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C6"
+    },
+    {
+      "id": "F7",
+      "type": "feature",
+      "title": "Task Status Classification",
+      "description": "Logic to categorize tasks based on completion date, due date, and story point estimation status.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C7"
+    },
+    {
+      "id": "F8",
+      "type": "feature",
+      "title": "Metric Calculation",
+      "description": "Automated calculation of total estimated points, completed points, completion rate, spillover, and unestimated task counts.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C8"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "type": "task",
+      "title": "Export Sprint",
+      "description": "Xuất dữ liệu Sprint ra file Excel.\nRelated feature: Xuất dữ liệu (Export)",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C1"
+    },
+    {
+      "id": "T2",
+      "type": "task",
+      "title": "AI Sprint Generation",
+      "description": "Sinh Sprint và danh sách công việc bằng AI.\nRelated feature: Sinh Sprint và Work bằng AI",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C2"
+    },
+    {
+      "id": "T3",
+      "type": "task",
+      "title": "Generate Presign URLs",
+      "description": "Tạo URL presigned để upload file.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C3"
+    },
+    {
+      "id": "T4",
+      "type": "task",
+      "title": "Implement Task Classification Logic",
+      "description": "Develop logic based on decision tables to classify tasks into DONE, NOT_DONE, EARLY, ON_TIME, LATE, or SPILLOVER.\nRelated feature: Task Status Classification",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C4"
+    },
+    {
+      "id": "T5",
+      "type": "task",
+      "title": "Develop Burndown Chart Engine",
+      "description": "Calculate Expected vs Actual burndown based on daily completed story points.\nRelated feature: Sprint Burndown Analysis",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C5"
+    },
+    {
+      "id": "T6",
+      "type": "task",
+      "title": "Configure Metric Reporting",
+      "description": "Implement formulas for Total Estimated, Total Completed, Completion Rate, and Spillover metrics.\nRelated feature: Metric Calculation",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C6"
+    },
+    {
+      "id": "T7",
+      "type": "task",
+      "title": "Sprint 1 - Task #47",
+      "description": null,
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/planning_sprint_11111111-2222-3333-4444-555555555555.md",
+          "type": "Planning"
+        }
+      ],
+      "cluster_id": "C7"
+    }
+  ],
+  "user_flows": [
+    {
+      "id": "UF1",
+      "type": "user_flow",
+      "title": "Export Sprint Flow",
+      "description": "1. User request GET /groups/{group_id}/sprints/{sprint_id}/export\n2. System validates group and sprint existence\n3. System generates Excel file\n4. System returns file with Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C1"
+    },
+    {
+      "id": "UF2",
+      "type": "user_flow",
+      "title": "AI Sprint Generation Flow",
+      "description": "1. User submits POST /groups/{group_id}/sprints/generation with sprint details and files\n2. System validates user role (Owner/Manager)\n3. System processes files and generates sprint tasks via AI\n4. System returns generation status message",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C2"
+    },
+    {
+      "id": "UF3",
+      "type": "user_flow",
+      "title": "Sprint Progress Tracking",
+      "description": "1. Input task data including story points, completion date, and due date\n2. System classifies task status based on business rules\n3. System populates daily completion cells\n4. System calculates burndown metrics and updates dashboard",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C3"
+    }
+  ],
+  "apis": [
+    {
+      "id": "A1",
+      "type": "api",
+      "title": "Export Sprint",
+      "description": "Signature: GET /groups/{group_id}/sprints/{sprint_id}/export\nXuất dữ liệu Sprint ra file Excel",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C1"
+    },
+    {
+      "id": "A2",
+      "type": "api",
+      "title": "AI Sprint Generation",
+      "description": "Signature: POST /groups/{group_id}/sprints/generation\nSinh Sprint và công việc bằng AI",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C2"
+    },
+    {
+      "id": "A3",
+      "type": "api",
+      "title": "Generate Presign URLs",
+      "description": "Signature: POST /groups/generate-presigned-urls\nTạo presigned URLs cho việc upload file",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C3"
+    }
+  ],
+  "db_schemas": []
+}

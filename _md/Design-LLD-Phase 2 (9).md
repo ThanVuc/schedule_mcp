@@ -31,6 +31,7 @@
 | ----- | ----- |
 | GET | /groups/{group\_id}/sprints/{sprint\_id}/export |
 | POST | /groups/{group\_id}/sprints/generation |
+| POST | /groups/generate-presigned-urls |
 
 ### 
 
@@ -77,6 +78,37 @@ POST `/groups/{group_id}/sprints/generation`
 | Key | Type | Required | Description |
 | ----- | ----- | ----- | ----- |
 | message | string | Yes | Response message indicating sprint generation status |
+
+#### 2.2.3 Generate Presign URLs
+
+POST `/groups/generate-presigned-urls`
+
+***Request Model — GeneratePresignedURLsRequest***
+
+| Key | Value | Required | Description |
+| ----- | ----- | ----- | ----- |
+| files | PresignFileItem\[\] | Yes | Request for create presign url |
+
+PresignFileItem
+
+| Key | Value | Required | Validation (Field) |
+| ----- | ----- | ----- | ----- |
+| index | int | Yes | int |
+| content\_type | string | Yes | 1–255 chars |
+| file\_name | string | Yes | 1–255 chars |
+
+***Response Model — GeneratePresignedURLsResponse***
+
+| Key | Value | Required | Description |
+| ----- | ----- | ----- | ----- |
+| files | PresignedFileItem\[\] | Yes | Response for create presign url |
+
+PresignedFileItem
+
+| Key | Value | Required | Validation (Field) |
+| ----- | ----- | ----- | ----- |
+| index | int | Yes | int |
+| presigned\_url | string | Yes | 1–255 chars |
 
 ### 2.3 gRPC
 
@@ -132,6 +164,38 @@ POST `/groups/{group_id}/sprints/generation`
 | message | string | Yes | "Sprint is generating, please wait" |
 | error | Error | No | Error information if failed |
 
+#### 2.3.1 Generate Presign URLs
+
+* Service: GroupService  
+* Method: rpc GeneratePresignedURLs(GeneratePresignedURLsRequest) returns (GeneratePresignedURLsResponse);  
+* Response Model \- GeneratePresignedURLsResponse:
+
+***Response Model — GeneratePresignedURLsResponse***
+
+| Key | Value | Required | Description |
+| ----- | ----- | ----- | ----- |
+| files | PresignedFileItem\[\] | Yes | Response for create presign url |
+
+PresignedFileItem
+
+| Key | Value | Required | Validation (Field) |
+| ----- | ----- | ----- | ----- |
+| index | int | Yes | int |
+| presigned\_url | string | Yes | 1–255 chars |
+
+* Example:
+
+"items": \[  
+            {  
+                "index": 0,  
+                "presigned\_url": "https://7c0c5facca00d41d18d210dbca7836de.r2.cloudflarestorage.com/my-app-bucket/ai-sprint-generation/a4eecb8b-e471-432b-84fc-0f80586557ad.png?Content-Type=image%2Fpng\&X-Amz-Algorithm=AWS4-HMAC-SHA256\&X-Amz-Credential=28185e741074997b21e380e9d5e25889%2F20260406%2FAPAC%2Fs3%2Faws4\_request\&X-Amz-Date=20260406T140911Z\&X-Amz-Expires=300\&X-Amz-SignedHeaders=host\&X-Amz-Signature=de0173176fd2cf3bbde1a7fd836ff227034f5565a517f88b44e23fd51b05f2e9"  
+            },  
+            {  
+                "index": 1,  
+                "presigned\_url": "https://7c0c5facca00d41d18d210dbca7836de.r2.cloudflarestorage.com/my-app-bucket/ai-sprint-generation/fd66565a-3308-4044-9112-965cc2a0ae48.jfif?Content-Type=image%2Fjpeg\&X-Amz-Algorithm=AWS4-HMAC-SHA256\&X-Amz-Credential=28185e741074997b21e380e9d5e25889%2F20260406%2FAPAC%2Fs3%2Faws4\_request\&X-Amz-Date=20260406T140911Z\&X-Amz-Expires=300\&X-Amz-SignedHeaders=host\&X-Amz-Signature=14de994a2988dbe3a7597d2fd3a359d52563d8c7adb747131f1009788bce7712"  
+            }  
+        \]
+
 ## 3\. Component Diagram
 
 ![][image1]
@@ -150,11 +214,11 @@ POST `/groups/{group_id}/sprints/generation`
 #### 4.1.2 Progress / Process
 
 1. **File Reception:** Nhận files nguyên trạng từ user interface hoặc storage service.  
-2. **File Classification Preparation:** Đánh dấu files để chuẩn bị cho bước Classification dựa trên filenames (assume đúng).
+2. **File Classification Preparation:** Upload file lên gemini temporary bucket để chuẩn bị cho việc truyền ref vào prompt.
 
 #### 4.1.3 Output
 
-* **Các File** được lấy từ Object Storage và được lưu trữ qua biến.
+* **Các Uri và MIME của các file đã upload lên Temporary Bucket**
 
 ### 
 
@@ -166,8 +230,8 @@ POST `/groups/{group_id}/sprints/generation`
 
 | Field | Type | Required | Description |
 | ----- | ----- | ----- | ----- |
-| file\_name | string | ✅ Yes | Tên file nguồn |
-| type | enum (Planning | Requirement | Design) | ✅ Yes | Loại file |
+| uri | string | ✅ Yes | Tên file nguồn |
+| mime | enum (Planning | Requirement | Design) | ✅ Yes | Loại file |
 | content | string | ✅ Yes | Nội dung raw text của file |
 
 🔹 Output Schema (Per File)
