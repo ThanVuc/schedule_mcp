@@ -1,0 +1,272 @@
+{
+  "features": [
+    {
+      "id": "F1",
+      "type": "feature",
+      "title": "Sinh Sprint và Work bằng AI",
+      "description": "Sử dụng AI để phân tích các file tài liệu đầu vào nhằm tự động tạo ra Sprint và danh sách các công việc đi kèm.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C1",
+      "tasks": [],
+      "user_flows": [],
+      "apis": [
+        {
+          "id": "A2",
+          "type": "api",
+          "title": "AI Sprint Generation",
+          "description": "Signature: POST /groups/{group_id}/sprints/generation\nSinh Sprint và Work bằng AI.",
+          "aliases": [],
+          "sources": [
+            {
+              "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+              "type": "Design"
+            }
+          ],
+          "cluster_id": "C2"
+        }
+      ],
+      "db_schemas": []
+    },
+    {
+      "id": "F2",
+      "type": "feature",
+      "title": "Bổ sung ngữ cảnh (Additional Context)",
+      "description": "Cho phép người dùng thêm các chỉ dẫn hoặc ngữ cảnh bổ sung để AI có thể tạo công việc theo phong cách hoặc yêu cầu riêng biệt của nhóm.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C2",
+      "tasks": [],
+      "user_flows": [],
+      "apis": [],
+      "db_schemas": []
+    },
+    {
+      "id": "F3",
+      "type": "feature",
+      "title": "Xem trước và Chỉnh sửa",
+      "description": "Kết quả từ AI phải được hiển thị dưới dạng bản xem trước (Preview) để người dùng có thể kiểm tra và chỉnh sửa trước khi lưu chính thức vào hệ thống.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C3",
+      "tasks": [],
+      "user_flows": [],
+      "apis": [],
+      "db_schemas": []
+    },
+    {
+      "id": "F4",
+      "type": "feature",
+      "title": "Xuất dữ liệu (Export)",
+      "description": "Hỗ trợ tính năng xuất danh sách công việc (Work list) theo sprint ra định dạng file Excel.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C4",
+      "tasks": [],
+      "user_flows": [],
+      "apis": [
+        {
+          "id": "A1",
+          "type": "api",
+          "title": "Export Sprint",
+          "description": "Signature: GET /groups/{group_id}/sprints/{sprint_id}/export\nXuất dữ liệu Sprint ra file Excel.",
+          "aliases": [],
+          "sources": [
+            {
+              "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+              "type": "Design"
+            }
+          ],
+          "cluster_id": "C1"
+        }
+      ],
+      "db_schemas": []
+    },
+    {
+      "id": "F5",
+      "type": "feature",
+      "title": "Phân quyền thực hiện",
+      "description": "Chỉ những người dùng có vai trò Owner hoặc Manager mới được phép sử dụng các tính năng AI để lập kế hoạch.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C5",
+      "tasks": [],
+      "user_flows": [],
+      "apis": [],
+      "db_schemas": []
+    },
+    {
+      "id": "F6",
+      "type": "feature",
+      "title": "Sprint Burndown Analysis",
+      "description": "System for tracking sprint progress using story points, comparing actual completion against ideal burndown metrics.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C6",
+      "tasks": [
+        {
+          "id": "T2",
+          "type": "task",
+          "title": "Develop Burndown Chart Engine",
+          "description": "Calculate Expected vs Actual burndown based on daily completed story points.\nRelated feature: Sprint Burndown Analysis",
+          "aliases": [],
+          "sources": [
+            {
+              "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+              "type": "Requirement"
+            }
+          ],
+          "cluster_id": "C2"
+        }
+      ],
+      "user_flows": [
+        {
+          "id": "UF1",
+          "type": "user_flow",
+          "title": "Sprint Progress Tracking",
+          "description": "1. Input task data including story points, completion date, and due date\n2. System classifies task status based on business rules\n3. System updates daily completion cells\n4. System calculates and displays burndown metrics and charts",
+          "aliases": [],
+          "sources": [
+            {
+              "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+              "type": "Requirement"
+            }
+          ],
+          "cluster_id": "C1"
+        }
+      ],
+      "apis": [],
+      "db_schemas": []
+    },
+    {
+      "id": "F7",
+      "type": "feature",
+      "title": "Task Status Classification",
+      "description": "Logic to categorize tasks based on completion date, due date, and story point estimation status.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C7",
+      "tasks": [
+        {
+          "id": "T1",
+          "type": "task",
+          "title": "Implement Task Classification Logic",
+          "description": "Develop logic based on decision tables to classify tasks into DONE, NOT_DONE, EARLY, ON_TIME, LATE, or SPILLOVER.\nRelated feature: Task Status Classification",
+          "aliases": [],
+          "sources": [
+            {
+              "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+              "type": "Requirement"
+            }
+          ],
+          "cluster_id": "C1"
+        }
+      ],
+      "user_flows": [],
+      "apis": [],
+      "db_schemas": []
+    },
+    {
+      "id": "F8",
+      "type": "feature",
+      "title": "Sprint Metric Calculation",
+      "description": "Automated calculation of total estimated points, completed points, completion rate, and spillover metrics.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+          "type": "Requirement"
+        }
+      ],
+      "cluster_id": "C8",
+      "tasks": [
+        {
+          "id": "T3",
+          "type": "task",
+          "title": "Configure Metric Reporting",
+          "description": "Implement formulas for Total Estimated, Total Completed, Completion Rate, and Spillover.\nRelated feature: Sprint Metric Calculation",
+          "aliases": [],
+          "sources": [
+            {
+              "file_name": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).md",
+              "type": "Requirement"
+            }
+          ],
+          "cluster_id": "C3"
+        }
+      ],
+      "user_flows": [],
+      "apis": [],
+      "db_schemas": []
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T4",
+      "type": "task",
+      "title": "Sprint 1 - Task #47",
+      "description": null,
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/planning_sprint_11111111-2222-3333-4444-555555555555.md",
+          "type": "Planning"
+        }
+      ],
+      "cluster_id": "C4"
+    }
+  ],
+  "user_flows": [],
+  "apis": [
+    {
+      "id": "A3",
+      "type": "api",
+      "title": "Generate Presign URLs",
+      "description": "Signature: POST /groups/generate-presigned-urls\nTạo presigned URLs cho việc upload file.",
+      "aliases": [],
+      "sources": [
+        {
+          "file_name": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+          "type": "Design"
+        }
+      ],
+      "cluster_id": "C3"
+    }
+  ],
+  "db_schemas": []
+}

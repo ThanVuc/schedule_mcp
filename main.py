@@ -1,5 +1,5 @@
 import asyncio
-from application import BootstrapApplication
+from boostrap import BootstrapApplication
 
 def main():
     asyncio.run(BootstrapApplication())
