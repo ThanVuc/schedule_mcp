@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Implement Pre-signed URL API for File Uploads",
+    "description": "Develop POST /groups/generate-presigned-urls to enable secure document uploads (DOCX, Excel) for AI analysis.",
+    "priority": "HIGH",
+    "story_point": 2,
+    "due_date": null
+  },
+  {
+    "name": "Implement AI Sprint Generation API",
+    "description": "Develop POST /groups/{group_id}/sprints/generation including RBAC validation for Owner/Manager roles and event-driven request handling.",
+    "priority": "HIGH",
+    "story_point": 5,
+    "due_date": null
+  },
+  {
+    "name": "Develop AI Document Parsing Logic",
+    "description": "Implement the backend service logic to parse uploaded DOCX and Excel files and transform content into structured sprint tasks using LLM.",
+    "priority": "HIGH",
+    "story_point": 8,
+    "due_date": null
+  },
+  {
+    "name": "Build AI Generation and Context Input UI",
+    "description": "Create the frontend interface for document uploads and a text area for users to provide additional instructions/context for the AI.",
+    "priority": "MEDIUM",
+    "story_point": 3,
+    "due_date": null
+  },
+  {
+    "name": "Develop Task Preview and Edit Interface",
+    "description": "Implement a UI component to display AI-generated tasks in a preview state, allowing users to modify or delete items before final persistence.",
+    "priority": "MEDIUM",
+    "story_point": 5,
+    "due_date": null
+  },
+  {
+    "name": "Implement Sprint Export to Excel API",
+    "description": "Develop GET /groups/{group_id}/sprints/{sprint_id}/export to generate and download an Excel file containing the work list and sprint details.",
+    "priority": "MEDIUM",
+    "story_point": 3,
+    "due_date": null
+  },
+  {
+    "name": "Implement Task Status Classification Logic",
+    "description": "Develop the business logic to categorize tasks into DONE, LATE, EARLY, or SPILLOVER based on completion dates and due dates.",
+    "priority": "HIGH",
+    "story_point": 3,
+    "due_date": null
+  },
+  {
+    "name": "Develop Sprint Metrics Aggregation Engine",
+    "description": "Implement automated calculations for total estimated points, completion rates, and spillover counts for sprint reporting.",
+    "priority": "HIGH",
+    "story_point": 3,
+    "due_date": null
+  },
+  {
+    "name": "Develop Burndown Chart Calculation Logic",
+    "description": "Create the backend engine to calculate daily expected vs. actual burndown values based on completed story points.",
+    "priority": "MEDIUM",
+    "story_point": 3,
+    "due_date": null
+  },
+  {
+    "name": "Build Sprint Progress and Burndown UI",
+    "description": "Implement the frontend dashboard to visualize sprint metrics and the burndown chart for real-time progress tracking.",
+    "priority": "MEDIUM",
+    "story_point": 5,
+    "due_date": null
+  }
+]

@@ -9,6 +9,7 @@ from application.publisher.work_transfer_publisher import WorkTransferPublisher
 from domain.entities.notification_entity import Notification
 from domain.entities.work_entity import Work
 from domain.prompt.work_generation_prompt import BuildWorkGenerationPrompt
+from infrastructure.base.const.infra_const import LLMAgentName
 from infrastructure.base.llm.gemini_llm import LLMConnector
 
 
@@ -31,12 +32,10 @@ class WorkGenerationUseCase:
         prompt = BuildWorkGenerationPrompt(dto)
         response = ""
         try:
-            response = str(await self.llm.generate(
+            response = str(await self.llm.generate_for_agent(
                 prompt=prompt,
+                agent_name=LLMAgentName.TASK_GENERATION,
                 max_output_tokens=15000,
-                temperature=0.1,
-                top_p=0.8,
-                top_k=40,
                 afc_enabled=False
             ))
 

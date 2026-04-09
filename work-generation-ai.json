@@ -1,0 +1,11 @@
+Url: /api/v1/works/generation
+Method: POST
+Body:
+{
+    "prompts": [
+        "Sáng làm contract management, create contract (7-11h)",
+        "Chiều làm update contract (1h30 - 5h)"
+    ],
+    "local_date": "2026-02-10",
+    "additional_context": "Tôi là lập trình viên, tôi đang làm module quản lý hợp đồng"
+}
