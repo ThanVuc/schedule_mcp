@@ -12,7 +12,7 @@ from application.dtos.sprint_generation_dto import (
     ReconciliationResultDTO,
 )
 from domain.prompt.reconciliation_prompt import BuildReconciliationPrompt
-from infrastructure.base.const.infra_const import LLMAgentName
+from infrastructure.base.const.infra_const import LLMAgentName, LLMModel
 from infrastructure.base.llm.gemini_llm import LLMConnector
 
 
@@ -139,7 +139,7 @@ class ReconciliationPipeline:
         try:
             response_text = await self.llm.generate_for_agent(
                 prompt=prompt,
-                agent_name=LLMAgentName.RECONCILIATION,
+                agent_name=LLMModel.GEMINI_3_0_FLASH,
                 afc_enabled=False,
                 files=[uploaded_file],
                 max_output_tokens=4096,
@@ -148,10 +148,26 @@ class ReconciliationPipeline:
             merged_items = self._extract_merged_items(llm_payload)
         except Exception:
             logging.exception(
-                "reconciliation batch merge failed | clusters=%d",
+                "reconciliation batch merge failed - fallback to flash lite | clusters=%d",
                 len(ai_clusters_payload),
             )
-            merged_items = []
+            try:
+                response_text = await self.llm.generate_for_agent(
+                    prompt=prompt,
+                    agent_name=LLMModel.GEMINI_3_1_FLASH_LITE,
+                    afc_enabled=False,
+                    files=[uploaded_file],
+                    max_output_tokens=4096,
+                )
+
+                llm_payload = self._parse_llm_json(response_text)
+                merged_items = self._extract_merged_items(llm_payload)
+            except Exception:
+                logging.exception(
+                    "reconciliation batch merge failed on flash lite - fallback to heuristic | clusters=%d",
+                    len(ai_clusters_payload),
+                )
+                return {}
 
         merged_by_key: dict[tuple[str, str], MergedItemDTO] = {}
         for merged in merged_items:
@@ -173,6 +189,14 @@ class ReconciliationPipeline:
                 llm_payload=merged,
                 fallback_items=fallback_items,
             )
+        
+        if len(merged_by_key) < len(ai_clusters_payload) * 0.5:
+            logging.warning(
+                "Merged items from LLM are less than 50%% of input clusters - possible LLM failure, fallback to heuristic | merged=%d, input_clusters=%d",
+                len(merged_by_key),
+                len(ai_clusters_payload),
+            )
+            return {}
 
         return merged_by_key
 
