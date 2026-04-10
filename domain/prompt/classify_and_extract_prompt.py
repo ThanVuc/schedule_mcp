@@ -174,6 +174,9 @@ def build_rules() -> str:
   "Always return all collections.",
   "Use [] for missing collections.",
   "Never return null for collections.",
+  "Return exactly one JSON object matching output_schema.",
+  "All string values must be valid JSON strings (escape internal quotes and backslashes).",
+  "Do not include raw newlines inside string values; use escaped \\n when needed.",
   
   "Output JSON only.",
   "No markdown, no explanation, no code fences."

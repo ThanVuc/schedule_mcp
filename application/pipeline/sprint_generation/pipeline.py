@@ -43,50 +43,42 @@ class SprintGenerationPipeline:
     async def normalize(
         self,
         classification_results: list[ClassificationResultDTO],
-        evidence_name: str | None = None,
     ) -> NormalizationResultDTO:
         return NormalizationPipeline(
             embedder=self._infra.get_embedder(),
         ).normalize(
             data=classification_results,
-            evidence_name=evidence_name,
         )
 
     async def reconcile(
         self,
         normalization_result: NormalizationResultDTO,
-        evidence_name: str | None = None,
     ) -> ReconciliationResultDTO:
         return await ReconciliationPipeline(
             llm=self.llm,
             max_concurrency=self.max_concurrency,
         ).reconcile(
             data=normalization_result,
-            evidence_name=evidence_name,
         )
 
     async def canonicalize(
         self,
         reconciliation_result: ReconciliationResultDTO,
-        evidence_name: str | None = None,
     ) -> CanonicalizationResultDTO:
         return CanonicalizationPipeline(
             embedder=self._infra.get_embedder(),
         ).canonicalize(
             items=reconciliation_result,
-            evidence_name=evidence_name,
         )
 
     async def generate_tasks(
         self,
         canonicalization_result: CanonicalizationResultDTO,
         payload: AISprintGenerationRequestedPayloadDTO,
-        evidence_name: str | None = None,
     ) -> list[AISprintGenerationResultTaskDTO]:
         return await TaskGenerationPipeline(
             llm=self.llm,
         ).generate_tasks(
             canonicalization=canonicalization_result,
             payload=payload,
-            evidence_name=evidence_name,
         )

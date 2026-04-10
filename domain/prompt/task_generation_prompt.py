@@ -239,12 +239,12 @@ def build_final_prompt(
   {build_core_principles()},
   {build_task_decomposition_rules()},
   {build_design_rules()},
-  {build_api_specific_rules}
+  {build_api_specific_rules()},
   {build_layer_coverage_rules()},
   {build_examples()},
   {build_strategy()},
   {build_validation_checklist()},
-  {build_rules()}
+  {build_rules()},
   {build_fall_back_rules()}
 }}
 """.strip()

@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import re
 
 from application.dtos.sprint_generation_dto import (
@@ -21,7 +20,6 @@ class TaskGenerationPipeline:
         self,
         canonicalization: CanonicalizationResultDTO,
         payload: AISprintGenerationRequestedPayloadDTO,
-        evidence_name: str | None = None,
     ) -> list[AISprintGenerationResultTaskDTO]:
         prompt = BuildTaskGenerationPrompt(
             additional_context=payload.additional_context,
@@ -48,7 +46,6 @@ class TaskGenerationPipeline:
 
         parsed_items = self._extract_tasks(self._parse_llm_json(response_text))
         tasks = self._normalize_tasks(parsed_items)
-        self._save_evidence(tasks, evidence_name=evidence_name)
         return tasks
 
     @staticmethod
@@ -82,7 +79,7 @@ class TaskGenerationPipeline:
             story_point = item.get("story_point")
             if isinstance(story_point, str) and story_point.strip().isdigit():
                 story_point = int(story_point.strip())
-            if story_point not in {1, 2, 3, 5, 8, 11}:
+            if story_point not in {1, 2, 3, 5, 8}:
                 story_point = None
 
             due_date = item.get("due_date")
@@ -121,7 +118,7 @@ class TaskGenerationPipeline:
         if parsed is not None:
             return parsed
 
-        logging.error("task generation parse error | response=%s", response_text)
+        logging.error("task generation parse error | invalid JSON response")
         raise ValueError("LLM response is not valid JSON")
 
     @staticmethod
@@ -137,16 +134,3 @@ class TaskGenerationPipeline:
             except json.JSONDecodeError:
                 continue
         return None
-
-    def _save_evidence(
-        self,
-        tasks: list[AISprintGenerationResultTaskDTO],
-        evidence_name: str | None,
-    ) -> None:
-        safe_name = (evidence_name or "task_generation").strip() or "task_generation"
-        safe_name = safe_name.replace("/", "_").replace("\\", "_")
-        evidence_path = f"z_evidence/task_generation/{safe_name}.json"
-
-        os.makedirs(os.path.dirname(evidence_path), exist_ok=True)
-        with open(evidence_path, "w", encoding="utf-8") as f:
-            json.dump([task.model_dump() for task in tasks], f, indent=2, ensure_ascii=False)

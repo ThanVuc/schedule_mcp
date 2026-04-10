@@ -1,6 +1,4 @@
 
-import json
-import os
 import re
 
 from application.dtos.sprint_generation_dto import (
@@ -20,7 +18,6 @@ class CanonicalizationPipeline:
     def canonicalize(
         self,
         items: ReconciliationResultDTO,
-        evidence_name: str | None = None,
     ) -> CanonicalizationResultDTO:
         features = [self._to_feature(item) for item in items.features]
         feature_signals = [self._build_feature_signal(feature) for feature in features]
@@ -82,7 +79,6 @@ class CanonicalizationPipeline:
             apis=orphan_apis,
             db_schemas=orphan_db_schemas,
         )
-        self._save_evidence(result, evidence_name=evidence_name)
         return result
 
     def _find_feature_index_via_task(
@@ -269,12 +265,3 @@ class CanonicalizationPipeline:
             apis=[],
             db_schemas=[],
         )
-
-    def _save_evidence(self, result: CanonicalizationResultDTO, evidence_name: str | None) -> None:
-        safe_name = (evidence_name or "canonicalization").strip() or "canonicalization"
-        safe_name = safe_name.replace("/", "_").replace("\\", "_")
-        evidence_path = f"z_evidence/canonicalization/{safe_name}.json"
-
-        os.makedirs(os.path.dirname(evidence_path), exist_ok=True)
-        with open(evidence_path, "w", encoding="utf-8") as f:
-            json.dump(result.model_dump(), f, indent=2, ensure_ascii=False)

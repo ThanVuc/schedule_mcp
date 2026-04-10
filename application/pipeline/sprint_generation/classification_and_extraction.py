@@ -43,12 +43,6 @@ class ClassifyAndExtractPipeline:
             payload["file_name"] = file_dto.name
             payload["type"] = self._resolve_type(file_dto.name, payload.get("type"))
 
-            # For debugging: print to response to evidence folder
-            evidence_path = f"z_evidence/classify_and_extract/{file_dto.name}.json"
-            os.makedirs(os.path.dirname(evidence_path), exist_ok=True)
-            with open(evidence_path, "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2, ensure_ascii=False)
-
             return ClassificationResultDTO.model_validate(payload)
 
     @classmethod
@@ -80,9 +74,19 @@ class ClassifyAndExtractPipeline:
 
     @staticmethod
     def _parse_llm_json(response_text: str) -> dict:
-        # First, handle common fenced JSON outputs.
-        fenced_match = re.search(r"```(?:json)?\s*(\{.*\})\s*```", response_text, re.DOTALL)
-        candidate = fenced_match.group(1) if fenced_match else response_text
+        decoder = json.JSONDecoder()
+
+        # Prefer fenced JSON blocks first when available.
+        fenced_blocks = re.findall(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL)
+        for block in fenced_blocks:
+            parsed = ClassifyAndExtractPipeline._decode_first_json_object(block, decoder)
+            if parsed is not None:
+                return parsed
+
+        candidate = response_text
+        parsed = ClassifyAndExtractPipeline._decode_first_json_object(candidate, decoder)
+        if parsed is not None:
+            return parsed
 
         try:
             return json.loads(candidate)
@@ -91,12 +95,27 @@ class ClassifyAndExtractPipeline:
             first_brace = candidate.find("{")
             last_brace = candidate.rfind("}")
             if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
-                logger.error("Classification parse error | invalid JSON response=%s", response_text)
+                logger.error("Classification parse error | invalid JSON response")
                 raise ValueError("LLM response is not valid JSON")
 
             json_slice = candidate[first_brace:last_brace + 1]
             try:
                 return json.loads(json_slice)
             except json.JSONDecodeError as exc:
-                logger.error("Classification parse error | invalid JSON slice=%s", json_slice)
+                logger.error("Classification parse error | invalid JSON slice")
                 raise ValueError("LLM response JSON parse failed") from exc
+
+    @staticmethod
+    def _decode_first_json_object(text: str, decoder: json.JSONDecoder) -> dict | None:
+        if not text:
+            return None
+
+        candidate_starts = [idx for idx, ch in enumerate(text) if ch == "{"]
+        for start in candidate_starts:
+            try:
+                parsed, _ = decoder.raw_decode(text, start)
+                if isinstance(parsed, dict):
+                    return parsed
+            except json.JSONDecodeError:
+                continue
+        return None
