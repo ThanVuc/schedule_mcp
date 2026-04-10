@@ -2,172 +2,216 @@ import json
 
 
 def BuildTaskGenerationPrompt(
-	additional_context: str | None,
-	sprint_name: str,
-	sprint_goal: str | None,
-	sprint_start_date: str,
-	sprint_end_date: str,
+    additional_context: str | None,
+    sprint_name: str,
+    sprint_goal: str | None,
+    sprint_start_date: str,
+    sprint_end_date: str,
 ) -> str:
-	return build_final_prompt(
-		additional_context=additional_context,
-		sprint_name=sprint_name,
-		sprint_goal=sprint_goal,
-		sprint_start_date=sprint_start_date,
-		sprint_end_date=sprint_end_date,
-	)
+    return build_final_prompt(
+        additional_context=additional_context,
+        sprint_name=sprint_name,
+        sprint_goal=sprint_goal,
+        sprint_start_date=sprint_start_date,
+        sprint_end_date=sprint_end_date,
+    )
 
 
 def build_role() -> str:
-	return "You are a Senior Product Manager + Tech Lead."
+    return "You are a Senior Product Manager + Tech Lead."
 
 
 def build_objective() -> str:
-	return "Generate production-ready sprint tasks from canonical structured input."
+    return "Generate atomic, production-ready sprint tasks from canonical structured input."
 
 
 def build_input_schema() -> str:
-	return """
+    return """
 "input_schema": {
-	"features": ["CanonicalFeature"],
-	"tasks": ["CanonicalItem"],
-	"user_flows": ["CanonicalItem"],
-	"apis": ["CanonicalItem"],
-	"db_schemas": ["CanonicalItem"]
+    "features": ["CanonicalFeature"],
+    "tasks": ["CanonicalItem"],
+    "user_flows": ["CanonicalItem"],
+    "apis": ["CanonicalItem"],
+    "db_schemas": ["CanonicalItem"]
 }
 """.strip()
 
 
 def build_output_schema() -> str:
-	return """
+    return """
 "output_schema": [
-	{
-		"name": "string",
-		"description": "string",
-		"priority": "LOW | MEDIUM | HIGH | null",
-		"story_point": "1 | 2 | 3 | 5 | 8 | null",
-		"due_date": "YYYY-MM-DD | null"
-	}
+    {
+        "name": "string",
+        "description": "string",
+        "priority": "LOW | MEDIUM | HIGH | null",
+        "story_point": "1 | 2 | 3 | 5 | 8 | null",
+        "due_date": "YYYY-MM-DD | null"
+    }
 ]
 """.strip()
 
 
 def build_core_principles() -> str:
-	return """
+    return """
 "core_principles": [
-	"Task atomicity: one task is one complete unit of work.",
-	"Task independence: each task is executable without hidden dependencies.",
-	"Measurability: each task has clear done condition and testable output.",
-	"Completion-based progress: progress counts only when task is done.",
-	"Estimation principle: story_point is optional and null when context is insufficient."
+    "Task atomicity: one task equals one pull request.",
+    "Task independence: no hidden dependencies.",
+    "Measurability: each task must be testable.",
+    "Granularity: each task should take 0.5–2 days.",
+    "Avoid high-level or vague tasks.",
+    "Prefer multiple small tasks over few large tasks."
 ]
 """.strip()
 
 
-def build_source_mapping() -> str:
-	return """
-"source_mapping": {
-	"apis": "backend tasks",
-	"user_flows": "frontend tasks",
-	"db_schemas": "database tasks",
-	"features": "integration + business logic tasks"
+def build_task_decomposition_rules() -> str:
+    return """
+"task_decomposition_rules": [
+    "Decompose each feature into layers: Design → Backend → Frontend → Integration → Testing.",
+    "Each layer must be split into separate atomic tasks.",
+    "Do not combine multiple layers into a single task.",
+    "Prefer 5–15 small tasks per feature instead of large tasks."
+]
+""".strip()
+
+
+def build_design_rules() -> str:
+    return """
+"design_rules": [
+    "If database schema is missing or unclear, generate a DB design task.",
+    "If API contract is missing, generate API request/response design task.",
+    "If system flow is complex, generate sequence/flow design task.",
+    "Design tasks must come before implementation tasks."
+]
+""".strip()
+
+
+def build_layer_coverage_rules() -> str:
+    return """
+"layer_coverage_rules": [
+    "If APIs exist → generate backend implementation and API test tasks.",
+    "If user_flows exist → generate frontend UI tasks.",
+    "If both frontend and backend exist → generate integration tasks.",
+    "If db_schemas exist → generate schema + migration tasks.",
+    "Infra/system tasks may skip UI but must include setup and validation tasks."
+]
+""".strip()
+
+
+def build_examples() -> str:
+    return """
+"examples": {
+    "bad_tasks": [
+        "Develop Document Parsing Pipeline",
+        "Implement AI Sprint Generation API",
+        "Build Authentication System"
+    ],
+    "good_tasks": [
+        "Implement file upload endpoint for document ingestion",
+        "Parse markdown into structured sections",
+        "Extract API definitions from document content",
+        "Create API endpoint to trigger sprint generation",
+        "Add RBAC middleware for sprint API",
+        "Build UI form to upload sprint document",
+        "Write unit tests for parsing logic",
+        "Connect UI to sprint generation API"
+    ]
 }
 """.strip()
 
 
 def build_strategy() -> str:
-	return """
+    return """
 "strategy": [
-	"Understand all inputs.",
-	"Generate tasks from features.",
-	"Add tasks from apis, user_flows, and db_schemas.",
-	"Fill missing gaps for full coverage.",
-	"Deduplicate by semantic intent.",
-	"Validate task quality.",
-	"Assign priority.",
-	"Assign story_point when possible."
+    "Understand all inputs.",
+    "For each feature, identify required layers: design, backend, frontend, integration, testing.",
+    "Generate design tasks first if missing.",
+    "Generate backend (API/logic) tasks.",
+    "Generate frontend tasks only if user_flows exist.",
+    "Generate integration tasks connecting components.",
+    "Generate testing tasks to validate behavior.",
+    "Ensure each task is atomic and independently executable.",
+    "Deduplicate by semantic intent.",
+    "Validate full layer coverage.",
+    "Assign priority and story_point."
 ]
 """.strip()
 
 
 def build_validation_checklist() -> str:
-	return """
+    return """
 "validation_checklist": [
-	"Remove duplicate tasks.",
-	"Ensure each task is atomic.",
-	"Ensure each task is measurable.",
-	"Ensure coverage includes API layer when apis exist.",
-	"Ensure coverage includes UI layer when user_flows exist.",
-	"Ensure coverage includes data layer when db_schemas exist.",
-	"Ensure feature-level integration tasks exist when needed.",
-	"Fix vague task names or descriptions."
+    "Remove duplicate tasks.",
+    "Ensure each task is atomic (1 PR).",
+    "Ensure each task is testable.",
+    "Ensure no task describes a full system or pipeline.",
+    "Ensure backend, frontend, and data layers are covered when applicable.",
+    "Ensure tasks are not vague or high-level.",
+    "Fix generic wording like 'system', 'pipeline', 'logic'."
 ]
 """.strip()
 
 
 def build_rules() -> str:
-	return """
+    return """
 "rules": [
-	"Return ONLY JSON.",
-	"Output must start with '[' and end with ']'.",
-	"No prose, no prefix/suffix text, no comments, no markdown.",
-  "Use attached file_data JSON as the canonical source of truth.",
-  "Generate minimal but sufficient tasks with full core coverage.",
-	"Do not over-generate tasks.",
-  "Each task must be atomic, measurable, and independently completable.",
-  "Avoid vague, duplicated, and non-testable tasks.",
-	"Avoid tasks that combine multiple unrelated goals.",
-  "Use verb-based naming: Verb + Object.",
-	"If API exists, ensure at least one task consumes/implements it.",
-	"If user_flow exists, ensure tasks support that flow end-to-end.",
-  "Ensure coverage for API layer when apis exist.",
-  "Ensure coverage for UI/user-flow layer when user_flows exist.",
-  "Ensure coverage for data layer when db_schemas exist.",
-  "Generate integration tasks from features where needed.",
-	"Auth/core APIs and database schema tasks are typically HIGH priority.",
-	"UI tasks are usually MEDIUM unless explicitly critical.",
-  "Deduplicate by semantic intent, not wording only.",
-  "priority allowed: HIGH, MEDIUM, LOW, or null.",
-  "story_point allowed: 1, 2, 3, 5, 8, or null.",
-	"Prefer smaller story_point unless explicit complexity is shown.",
-	"Keep similar tasks at similar story_point levels.",
-  "due_date must be YYYY-MM-DD or null.",
-	"Assign due_date only when explicitly implied by context; otherwise null.",
-  "Do not hallucinate features outside input.",
-	"If input is weak, return a minimal valid task list without inventing complex logic.",
-	"Return valid JSON array only (not object wrapper).",
-  "Do not include markdown, code fences, or explanations."
+    "Return ONLY JSON.",
+    "Output must start with '[' and end with ']'.",
+    "No prose, no markdown, no explanations.",
+    "Use attached file_data JSON as the source of truth.",
+    
+    "Each task must be atomic and correspond to a single PR.",
+    "Each task must be completable within 0.5–2 days.",
+    
+    "Do NOT generate high-level tasks like 'build system' or 'develop pipeline'.",
+    "Do NOT combine UI, API, and DB work into one task.",
+    
+    "Task name must be Verb + Specific Component.",
+    "Avoid generic nouns like 'system', 'pipeline', 'logic', 'feature'.",
+    
+    "If APIs exist, ensure implementation and test tasks.",
+    "If user_flows exist, ensure UI tasks.",
+    "If db_schemas exist, ensure DB tasks.",
+    
+    "priority allowed: HIGH, MEDIUM, LOW, or null.",
+    "story_point allowed: 1, 2, 3, 5, 8, or null.",
+    "due_date must be YYYY-MM-DD or null.",
+    
+    "Do not hallucinate features outside input.",
+    "If input is weak, return minimal valid tasks.",
+    "Return valid JSON array only."
 ]
 """.strip()
 
 
 def build_runtime_context(
-	additional_context: str | None,
-	sprint_name: str,
-	sprint_goal: str | None,
-	sprint_start_date: str,
-	sprint_end_date: str,
+    additional_context: str | None,
+    sprint_name: str,
+    sprint_goal: str | None,
+    sprint_start_date: str,
+    sprint_end_date: str,
 ) -> str:
-	context_payload = {
-		"sprint": {
-			"name": sprint_name,
-			"goal": sprint_goal,
-			"start_date": sprint_start_date,
-			"end_date": sprint_end_date,
-		},
-		"additional_context": additional_context,
-	}
-	context_json = json.dumps(context_payload, ensure_ascii=False)
-	return f'"runtime_context": {context_json}'
+    context_payload = {
+        "sprint": {
+            "name": sprint_name,
+            "goal": sprint_goal,
+            "start_date": sprint_start_date,
+            "end_date": sprint_end_date,
+        },
+        "additional_context": additional_context,
+    }
+    context_json = json.dumps(context_payload, ensure_ascii=False)
+    return f'"runtime_context": {context_json}'
 
 
 def build_final_prompt(
-	additional_context: str | None,
-	sprint_name: str,
-	sprint_goal: str | None,
-	sprint_start_date: str,
-	sprint_end_date: str,
+    additional_context: str | None,
+    sprint_name: str,
+    sprint_goal: str | None,
+    sprint_start_date: str,
+    sprint_end_date: str,
 ) -> str:
-	return f"""
+    return f"""
 {{
   "role": "{build_role()}",
   "objective": "{build_objective()}",
@@ -175,10 +219,13 @@ def build_final_prompt(
   {build_runtime_context(additional_context, sprint_name, sprint_goal, sprint_start_date, sprint_end_date)},
   {build_input_schema()},
   {build_output_schema()},
-	{build_core_principles()},
-	{build_source_mapping()},
-	{build_strategy()},
-	{build_validation_checklist()},
+  {build_core_principles()},
+  {build_task_decomposition_rules()},
+  {build_design_rules()},
+  {build_layer_coverage_rules()},
+  {build_examples()},
+  {build_strategy()},
+  {build_validation_checklist()},
   {build_rules()}
 }}
 """.strip()
