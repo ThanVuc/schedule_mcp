@@ -7,6 +7,7 @@ def BuildTaskGenerationPrompt(
     sprint_goal: str | None,
     sprint_start_date: str,
     sprint_end_date: str,
+    target_min_tasks: int | None = None,
 ) -> str:
     return build_final_prompt(
         additional_context=additional_context,
@@ -14,6 +15,25 @@ def BuildTaskGenerationPrompt(
         sprint_goal=sprint_goal,
         sprint_start_date=sprint_start_date,
         sprint_end_date=sprint_end_date,
+        target_min_tasks=target_min_tasks,
+    )
+
+
+def BuildTaskExpansionPrompt(
+    sprint_name: str,
+    sprint_goal: str | None,
+    sprint_start_date: str,
+    sprint_end_date: str,
+    target_min_tasks: int,
+    existing_tasks: list[dict],
+) -> str:
+    return build_expansion_prompt(
+        sprint_name=sprint_name,
+        sprint_goal=sprint_goal,
+        sprint_start_date=sprint_start_date,
+        sprint_end_date=sprint_end_date,
+        target_min_tasks=target_min_tasks,
+        existing_tasks=existing_tasks,
     )
 
 
@@ -59,7 +79,20 @@ def build_core_principles() -> str:
     "Measurability: each task must be testable.",
     "Granularity: each task should take 0.5–2 days.",
     "Avoid high-level or vague tasks.",
-    "Prefer multiple small tasks over few large tasks."
+    "Prefer multiple small tasks over few large tasks.",
+    "Prioritize completeness of layer coverage over brevity."
+]
+""".strip()
+
+
+def build_minimum_coverage_rules() -> str:
+    return """
+"minimum_coverage_rules": [
+    "For each feature, generate at least 3 tasks when enough context exists.",
+    "For each API, generate at least 2 tasks: implementation + testing.",
+    "For each user_flow, generate at least 2 tasks: UI flow + integration/E2E validation.",
+    "For each db_schema, generate at least 2 tasks: migration + repository/query handling.",
+    "Do not stop early when there are uncovered layers."
 ]
 """.strip()
 
@@ -187,7 +220,8 @@ def build_rules() -> str:
     "due_date must be YYYY-MM-DD or null.",
     
     "Do not hallucinate features outside input.",
-    "If input is weak, return minimal valid tasks.",
+    "If input is weak, still generate concrete layer-coverage tasks from available APIs, user flows, and db schemas.",
+    "If runtime_context.target_min_tasks exists, generate at least that many tasks unless input is empty.",
     "Return valid JSON array only."
 ]
 """.strip()
@@ -207,6 +241,7 @@ def build_runtime_context(
     sprint_goal: str | None,
     sprint_start_date: str,
     sprint_end_date: str,
+    target_min_tasks: int | None = None,
 ) -> str:
     context_payload = {
         "sprint": {
@@ -216,6 +251,7 @@ def build_runtime_context(
             "end_date": sprint_end_date,
         },
         "additional_context": additional_context,
+        "target_min_tasks": target_min_tasks,
     }
     context_json = json.dumps(context_payload, ensure_ascii=False)
     return f'"runtime_context": {context_json}'
@@ -227,16 +263,18 @@ def build_final_prompt(
     sprint_goal: str | None,
     sprint_start_date: str,
     sprint_end_date: str,
+    target_min_tasks: int | None = None,
 ) -> str:
     return f"""
 {{
   "role": "{build_role()}",
   "objective": "{build_objective()}",
   "input_mode": "attached_file_data_json",
-  {build_runtime_context(additional_context, sprint_name, sprint_goal, sprint_start_date, sprint_end_date)},
+    {build_runtime_context(additional_context, sprint_name, sprint_goal, sprint_start_date, sprint_end_date, target_min_tasks)},
   {build_input_schema()},
   {build_output_schema()},
   {build_core_principles()},
+    {build_minimum_coverage_rules()},
   {build_task_decomposition_rules()},
   {build_design_rules()},
   {build_api_specific_rules()},
@@ -246,5 +284,51 @@ def build_final_prompt(
   {build_validation_checklist()},
   {build_rules()},
   {build_fall_back_rules()}
+}}
+""".strip()
+
+
+def build_expansion_prompt(
+        sprint_name: str,
+        sprint_goal: str | None,
+        sprint_start_date: str,
+        sprint_end_date: str,
+        target_min_tasks: int,
+        existing_tasks: list[dict],
+) -> str:
+        context_payload = {
+                "sprint": {
+                        "name": sprint_name,
+                        "goal": sprint_goal,
+                        "start_date": sprint_start_date,
+                        "end_date": sprint_end_date,
+                },
+                "target_min_tasks": target_min_tasks,
+                "existing_tasks": existing_tasks,
+        }
+
+        return f"""
+{{
+    "role": "{build_role()}",
+    "objective": "Expand existing tasks to reach minimum coverage and count without duplicates.",
+    "input_mode": "attached_file_data_json",
+    "runtime_context": {json.dumps(context_payload, ensure_ascii=False)},
+    "output_schema": [
+        {{
+            "name": "string",
+            "description": "string",
+            "priority": "LOW | MEDIUM | HIGH | null",
+            "story_point": "1 | 2 | 3 | 5 | 8 | null",
+            "due_date": "YYYY-MM-DD | null"
+        }}
+    ],
+    "rules": [
+        "Return ONLY JSON array.",
+        "Generate ONLY NEW tasks not overlapping existing_tasks by intent.",
+        "Prefer missing layer tasks (design, backend, frontend, integration, testing).",
+        "Respect minimum_coverage_rules from base prompt.",
+        "Generate enough new tasks so existing + new >= target_min_tasks when feasible.",
+        "Do not return explanations or markdown."
+    ]
 }}
 """.strip()
