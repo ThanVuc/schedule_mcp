@@ -64,36 +64,6 @@ def build_output_schema() -> str:
 """.strip()
 
 
-def build_rules() -> str:
-  return """
-"rules": [
-  "Process one file only (1 file = 1 AI call).",
-  "Use attached file_data as the only source of file content.",
-  "Input schema only uses uri and mime from attached file_data metadata.",
-  "Set file_name exactly equal to uri.",
-  "Determine type with this priority: filename prefix first, content fallback second.",
-  "Extract base filename from uri (lowercase, ignore extension) before checking prefix.",
-  "If filename starts with prefix 'design' (design_, design-, design ) => type must be Design.",
-  "If filename starts with prefix 'planning' (planning_, planning-, planning ) => type must be Planning.",
-  "If filename starts with prefix 'requirement' (requirement_, requirement-, requirement ) => type must be Requirement.",
-  "Only when no valid prefix exists, infer type from file content.",
-  "Fallback content rule: Design if technical specs dominate (API contracts, DB schema, sequence/state/component diagrams, integration contracts, data models).",
-  "Fallback content rule: Requirement if requirement artifacts dominate (user stories, acceptance criteria, business rules, personas, user journeys).",
-  "Fallback content rule: Planning if planning artifacts dominate (scope, goals, milestones, timeline, roadmap, effort plan).",
-  "If fallback evidence is mixed, choose the most technical type in this order: Design > Requirement > Planning.",
-  "Extract only what is explicitly present in the file.",
-  "No cross-file linking.",
-  "No semantic merge.",
-  "No guessing missing data.",
-  "Always return all collections: features, tasks, user_flows, apis, db_schema.",
-  "Use [] for missing collections.",
-  "Never return null for collections.",
-  "Keep output JSON only, no markdown, no explanation.",
-  "Do not wrap output in code fences."
-]
-""".strip()
-
-
 def build_priority_hints() -> str:
     return """
 "type_priority_hints": {
@@ -101,6 +71,113 @@ def build_priority_hints() -> str:
   "Requirement": ["features", "user_flows"],
   "Planning": ["tasks", "features"]
 }
+""".strip()
+
+
+def build_extraction_strategy() -> str:
+    return """
+"extraction_strategy": [
+  "Scan the entire document before extracting.",
+  "Identify logical sections such as Features, APIs, Database, User Flows, Tasks.",
+  "Extract structured data section by section.",
+  "Prefer structured formats (tables, lists, code blocks) over free text.",
+  "If sections are not explicit, infer based on patterns."
+]
+""".strip()
+
+
+def build_pattern_rules() -> str:
+    return """
+"pattern_rules": [
+  "APIs: detect HTTP methods (GET, POST, PUT, DELETE, PATCH) and endpoints (/path).",
+  "APIs: extract name from nearby heading or description.",
+  
+  "DB schema: detect tables, columns, and types from tables or structured lists.",
+  "DB schema: extract constraints only if explicitly stated (PRIMARY KEY, FOREIGN KEY, NOT NULL, UNIQUE).",
+  
+  "User flows: detect ordered steps, numbered lists, or sequential actions.",
+  
+  "Features: detect headings or high-level capability descriptions.",
+  
+  "Tasks: detect action-oriented items using verbs (implement, build, create, design, add, integrate)."
+]
+""".strip()
+
+
+def build_normalization_rules() -> str:
+    return """
+"normalization_rules": [
+  "Trim whitespace and normalize casing.",
+  "Keep naming concise but specific.",
+  "Avoid duplicate entries within the same section.",
+  "Merge identical items within the same file.",
+  "Use consistent naming for APIs and tables."
+]
+""".strip()
+
+
+def build_hallucination_rules() -> str:
+    return """
+"hallucination_rules": [
+  "Only extract data explicitly present in the file.",
+  "If a field is unclear or missing, set it to null.",
+  "Do not infer endpoints, schema, or fields.",
+  "Do not create synthetic features, APIs, or tasks."
+]
+""".strip()
+
+
+def build_user_flow_rules() -> str:
+    return """
+"user_flow_rules": [
+  "Each user flow must have a clear name.",
+  "Steps must be sequential and action-based.",
+  "Do not merge multiple flows into one.",
+  "Ignore non-actionable descriptions."
+]
+""".strip()
+
+
+def build_api_rules() -> str:
+    return """
+"api_rules": [
+  "Each API must include method if explicitly present.",
+  "Each API must include endpoint if explicitly present.",
+  "If method or endpoint is missing, set to null.",
+  "Do not guess missing API details."
+]
+""".strip()
+
+
+def build_rules() -> str:
+    return """
+"rules": [
+  "Process one file only (1 file = 1 AI call).",
+  "Use attached file_data as the only source.",
+  "Set file_name exactly equal to uri.",
+  
+  "Determine type using filename prefix first, then content fallback.",
+  "Extract base filename (lowercase, ignore extension) before checking prefix.",
+  
+  "Prefix rules:",
+  "design_* => Design",
+  "planning_* => Planning",
+  "requirement_* => Requirement",
+  
+  "Fallback type rules:",
+  "Design if technical content dominates.",
+  "Requirement if business/user logic dominates.",
+  "Planning if timeline/scope dominates.",
+  
+  "If mixed, choose priority: Design > Requirement > Planning.",
+  
+  "Always return all collections.",
+  "Use [] for missing collections.",
+  "Never return null for collections.",
+  
+  "Output JSON only.",
+  "No markdown, no explanation, no code fences."
+]
 """.strip()
 
 
@@ -112,6 +189,12 @@ def build_final_prompt() -> str:
   {build_input_schema()},
   {build_output_schema()},
   {build_priority_hints()},
+  {build_extraction_strategy()},
+  {build_pattern_rules()},
+  {build_normalization_rules()},
+  {build_hallucination_rules()},
+  {build_user_flow_rules()},
+  {build_api_rules()},
   {build_rules()}
 }}
 """.strip()
