@@ -85,6 +85,15 @@ def build_design_rules() -> str:
 ]
 """.strip()
 
+def build_api_specific_rules() -> str:
+    return """
+"api_task_rules": [
+  "For each API, generate at least one implementation task.",
+  "For CRUD APIs, generate separate tasks per action when possible.",
+  "Always generate API tasks even if no feature is mapped."
+]
+""".strip()
+
 
 def build_layer_coverage_rules() -> str:
     return """
@@ -183,6 +192,14 @@ def build_rules() -> str:
 ]
 """.strip()
 
+def build_fall_back_rules() -> str:
+    return """
+"fallback_rules": [
+  "If APIs exist but no features, derive tasks directly from APIs.",
+  "If DB schemas exist, generate schema and migration tasks.",
+  "Never return empty tasks when APIs are present."
+]
+""".strip()
 
 def build_runtime_context(
     additional_context: str | None,
@@ -222,10 +239,12 @@ def build_final_prompt(
   {build_core_principles()},
   {build_task_decomposition_rules()},
   {build_design_rules()},
+  {build_api_specific_rules}
   {build_layer_coverage_rules()},
   {build_examples()},
   {build_strategy()},
   {build_validation_checklist()},
   {build_rules()}
+  {build_fall_back_rules()}
 }}
 """.strip()
