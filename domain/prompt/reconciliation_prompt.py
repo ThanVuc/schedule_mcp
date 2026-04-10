@@ -81,6 +81,14 @@ def build_type_rules() -> str:
 }
 """.strip()
 
+def build_api_specific_rules() -> str:
+    return """
+    "api_specific_rules": [
+  "Do NOT merge APIs with different actions (GET, POST, PUT, DELETE).",
+  "Each distinct endpoint or action must remain separate.",
+  "Preserve CRUD granularity (create, read, update, delete)."
+]
+""".strip()
 
 def build_merge_validation_rules() -> str:
     return """
@@ -186,6 +194,7 @@ def build_final_prompt() -> str:
     {build_input_schema()},
     {build_output_schema()},
     {build_type_rules()},
+    {build_api_specific_rules()},
     {build_merge_validation_rules()},
     {build_granularity_rules()},
     {build_examples()},
