@@ -1,6 +1,14 @@
 [tool.poetry]
 package-mode = false
 
+[tool.poetry.dependencies]
+torch = { version = "2.7.1+cpu", source = "pytorch-cpu" }
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
 [project]
 name = "schedule-mcp"
 version = "0.1.0"

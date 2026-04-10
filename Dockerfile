@@ -32,8 +32,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# copy app + virtualenv from builder
-COPY --from=builder /app /app
+# copy only runtime artifacts from builder
+COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/main.py /app/main.py
+COPY --from=builder /app/application /app/application
+COPY --from=builder /app/boostrap /app/boostrap
+COPY --from=builder /app/configs /app/configs
+COPY --from=builder /app/constant /app/constant
+COPY --from=builder /app/domain /app/domain
+COPY --from=builder /app/infrastructure /app/infrastructure
+COPY --from=builder /app/interface /app/interface
 
 # optional: create non-root user (recommended)
 RUN useradd -m appuser && chown -R appuser:appuser /app
