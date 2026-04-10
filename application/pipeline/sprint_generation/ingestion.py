@@ -333,11 +333,6 @@ class IngestionPipeline:
                 mime=mime,
             )
 
-            # print a markdown file for testing (evidence)
-            os.makedirs("z_evidence/ingestion", exist_ok=True)
-            with open(f"z_evidence/ingestion/{os.path.basename(upload_key)}", "wb") as f:
-                f.write(upload_content)
-
             # 3. Upload file to LLM and get a reference (e.g. file_id or URL)
             return await self.llm.upload_file(
                 object_key=upload_key,
