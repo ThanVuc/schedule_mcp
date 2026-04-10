@@ -1,7 +1,6 @@
 
 import json
 import logging
-import os
 import re
 
 from application.dtos.sprint_generation_dto import (
@@ -26,7 +25,6 @@ class ReconciliationPipeline:
     async def reconcile(
         self,
         data: NormalizationResultDTO,
-        evidence_name: str | None = None,
     ) -> ReconciliationResultDTO:
         collection_by_type: dict[str, list[NormalizedItemDTO]] = {
             "feature": data.features,
@@ -82,7 +80,6 @@ class ReconciliationPipeline:
             apis=apis,
             db_schemas=db_schemas,
         )
-        self._save_evidence(result, evidence_name=evidence_name)
         return result
 
     @staticmethod
@@ -416,11 +413,3 @@ class ReconciliationPipeline:
                 raise ValueError("LLM response must be a JSON object")
             return parsed
 
-    def _save_evidence(self, result: ReconciliationResultDTO, evidence_name: str | None) -> None:
-        safe_name = (evidence_name or "reconciliation").strip() or "reconciliation"
-        safe_name = safe_name.replace("/", "_").replace("\\", "_")
-        evidence_path = f"z_evidence/reconciliation/{safe_name}.json"
-
-        os.makedirs(os.path.dirname(evidence_path), exist_ok=True)
-        with open(evidence_path, "w", encoding="utf-8") as f:
-            json.dump(result.model_dump(), f, indent=2, ensure_ascii=False)

@@ -1,7 +1,4 @@
 
-import json
-import os
-
 from application.dtos.sprint_generation_dto import (
     ClassificationResultDTO,
     ColumnDTO,
@@ -20,7 +17,6 @@ class NormalizationPipeline:
     def normalize(
         self,
         data: list[ClassificationResultDTO],
-        evidence_name: str | None = None,
     ) -> NormalizationResultDTO:
         features = self._normalize_features(data)
         tasks = self._normalize_tasks(data)
@@ -53,8 +49,6 @@ class NormalizationPipeline:
             apis=apis,
             db_schemas=db_schemas,
         )
-
-        self._save_evidence(result, evidence_name=evidence_name)
         return result
 
     def _normalize_features(self, data: list[ClassificationResultDTO]) -> list[NormalizedItemDTO]:
@@ -273,12 +267,3 @@ class NormalizationPipeline:
     def _clear_embeddings(items: list[NormalizedItemDTO]) -> None:
         for item in items:
             item.embedding = None
-
-    def _save_evidence(self, result: NormalizationResultDTO, evidence_name: str | None) -> None:
-        safe_name = (evidence_name or "normalization").strip() or "normalization"
-        safe_name = safe_name.replace("/", "_").replace("\\", "_")
-        evidence_path = f"z_evidence/normalization/{safe_name}.json"
-
-        os.makedirs(os.path.dirname(evidence_path), exist_ok=True)
-        with open(evidence_path, "w", encoding="utf-8") as f:
-            json.dump(result.model_dump(), f, indent=2, ensure_ascii=False)
