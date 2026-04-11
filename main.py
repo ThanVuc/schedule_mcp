@@ -1,8 +1,8 @@
 import asyncio
-from boostrap import BootstrapApplication
+from boostrap import ConsoleBootstrapApplication
 
 def main():
-    asyncio.run(BootstrapApplication())
+    asyncio.run(ConsoleBootstrapApplication())
 
 if __name__ == "__main__":
     main()

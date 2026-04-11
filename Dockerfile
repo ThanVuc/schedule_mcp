@@ -37,7 +37,6 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/main.py /app/main.py
 COPY --from=builder /app/application /app/application
 COPY --from=builder /app/boostrap /app/boostrap
-COPY --from=builder /app/configs /app/configs
 COPY --from=builder /app/constant /app/constant
 COPY --from=builder /app/domain /app/domain
 COPY --from=builder /app/infrastructure /app/infrastructure
