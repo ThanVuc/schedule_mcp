@@ -19,7 +19,7 @@ ENV PATH="/root/.local/bin:$PATH"
 
 # install dependencies (better caching)
 COPY pyproject.toml poetry.lock* ./
-RUN poetry install --no-root --only main
+RUN poetry lock --no-interaction && poetry install --no-root --only main
 
 # 🔥 copy source code AFTER deps (important for caching)
 COPY . .
