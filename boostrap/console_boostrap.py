@@ -38,17 +38,9 @@ def _build_hardcoded_message() -> AISprintGenerationRequestedMessageDTO:
 			},
 			"files": [
 				{
-					"object_key": "ai-sprint-generation/Design-LLD-Phase 2 (9).md",
+					"object_key": "ai-sprint-generation/Design-LLD-Phase1-1775795772430.md",
 					"size": 1024,
 				},
-				{
-					"object_key": "ai-sprint-generation/Requirement_Export Srpint Requirement Analysis (2).docx",
-					"size": 1024,
-				},
-				{
-					"object_key": "ai-sprint-generation/planning_sprint_11111111-2222-3333-4444-555555555555.xlsx",
-					"size": 1024,
-				}
 			],
 			"additional_context": "Focus on high-impact tasks first, and using the Vietnamese language for task descriptions is preferred.",
 		}

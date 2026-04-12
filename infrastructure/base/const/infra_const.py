@@ -17,7 +17,7 @@ class LLMAgentName(str, Enum):
 
 
 class EmbedderModel(str, Enum):
-	ALL_MINILM_L6_V2 = "all-MiniLM-L6-v2"
+	MINILM_L12_V2 = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 class StorageProvider(str, Enum):

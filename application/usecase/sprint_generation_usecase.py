@@ -10,6 +10,7 @@ from application.dtos.sprint_generation_dto import (
     TeamNotificationPayloadDTO,
 )
 from application.pipeline.sprint_generation.pipeline import SprintGenerationPipeline
+from application.utils.evidence_manager import EvidenceManager
 from application.publisher.sprint_result_publisher import SprintResultPublisher
 from application.publisher.team_notification_publisher import TeamNotificationPublisher
 from constant.notification import (
@@ -29,39 +30,50 @@ class SprintGenerationUseCase:
         self.team_notification_publisher = team_notification_publisher
         self.sprint_generation_pipeline = sprint_generation_pipeline
 
+        self.evidence_manager = EvidenceManager()
+
     async def process_sprint_generation_request(self, dto: AISprintGenerationRequestedMessageDTO):
         try:
+            # Clear evidence at the start of a new pipeline run
+            self.evidence_manager.clear_evidence()
+
             # Pipeline
             ## Step 1: Ingest and process input files (e.g. backlog.csv) - placeholder for now
             ingested_objects = await self.sprint_generation_pipeline.ingest(
-                [f.object_key for f in dto.payload.files]
+                dto.payload.files
             )
+            # self.evidence_manager.save_step_result("ingestion", ingested_objects, "files.json")
 
             ## Step 2: Classification & Extraction (1 file = 1 async LLM call)
             classification_results = await self.sprint_generation_pipeline.classify_and_extract(
-                ingested_objects
+                ingested_objects.files
             )
+            # self.evidence_manager.save_step_result("classify_and_extract", classification_results, "classifications.json")
 
-            ## Step 3: Normalization (embedding, similarity, clustering)
+            # Step 3: Normalization (embedding, similarity, clustering)
             normalization_result = await self.sprint_generation_pipeline.normalize(
                 classification_results,
             )
+            # self.evidence_manager.save_step_result("normalization", normalization_result, "normalized.json")
 
             ## Step 4: Reconciliation (cluster filtering + AI merge)
             reconciliation_result = await self.sprint_generation_pipeline.reconcile(
                 normalization_result,
             )
+            # self.evidence_manager.save_step_result("reconciliation", reconciliation_result, "reconciled.json")
 
             ## Step 5: Canonicalization (feature-centered linking + orphan preserving)
             canonicalization_result = await self.sprint_generation_pipeline.canonicalize(
                 reconciliation_result,
             )
+            # self.evidence_manager.save_step_result("canonicalization", canonicalization_result, "canonicalized.json")
 
-            ## Step 6: Task Generation
+            # ## Step 6: Task Generation
             generated_tasks = await self.sprint_generation_pipeline.generate_tasks(
                 canonicalization_result=canonicalization_result,
                 payload=dto.payload,
             )
+            # self.evidence_manager.save_step_result("task_generation", generated_tasks, "tasks.json")
 
             # Build response envelope from pipeline output.
             result_message = self._build_success_result_message(
