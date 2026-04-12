@@ -6,7 +6,7 @@ from application.dtos.sprint_generation_dto import (
     CanonicalizationItemDTO,
     CanonicalizationResultDTO,
     MergedItemDTO,
-    ReconciliationResultDTO,
+    ReconciliationOutputDTO,
 )
 from infrastructure.base.embedder.embedder import Embedder
 
@@ -17,15 +17,14 @@ class CanonicalizationPipeline:
 
     def canonicalize(
         self,
-        items: ReconciliationResultDTO,
+        items: ReconciliationOutputDTO,
     ) -> CanonicalizationResultDTO:
         features = [self._to_feature(item) for item in items.features]
         feature_signals = [self._build_feature_signal(feature) for feature in features]
 
         orphan_tasks: list[CanonicalizationItemDTO] = []
-        orphan_user_flows: list[CanonicalizationItemDTO] = []
         orphan_apis: list[CanonicalizationItemDTO] = []
-        orphan_db_schemas: list[CanonicalizationItemDTO] = []
+        orphan_database: list[CanonicalizationItemDTO] = []
 
         task_feature_index: dict[str, int] = {}
 
@@ -39,15 +38,6 @@ class CanonicalizationPipeline:
             features[feature_idx].tasks.append(task_item)
             task_feature_index[task.id] = feature_idx
 
-        for flow in items.user_flows:
-            flow_item = self._to_item(flow)
-            feature_idx = self._find_best_feature_index(flow, feature_signals)
-            if feature_idx is None:
-                orphan_user_flows.append(flow_item)
-                continue
-
-            features[feature_idx].user_flows.append(flow_item)
-
         for api in items.apis:
             api_item = self._to_item(api)
             feature_idx = self._find_best_feature_index(api, feature_signals)
@@ -60,24 +50,23 @@ class CanonicalizationPipeline:
 
             features[feature_idx].apis.append(api_item)
 
-        for db_schema in items.db_schemas:
+        for db_schema in items.database:
             db_item = self._to_item(db_schema)
             feature_idx = self._find_best_feature_index(db_schema, feature_signals)
             if feature_idx is None:
                 feature_idx = self._find_feature_index_via_task(db_schema, items.tasks, task_feature_index)
 
             if feature_idx is None:
-                orphan_db_schemas.append(db_item)
+                orphan_database.append(db_item)
                 continue
 
-            features[feature_idx].db_schemas.append(db_item)
+            features[feature_idx].database.append(db_item)
 
         result = CanonicalizationResultDTO(
             features=features,
             tasks=orphan_tasks,
-            user_flows=orphan_user_flows,
             apis=orphan_apis,
-            db_schemas=orphan_db_schemas,
+            database=orphan_database,
         )
         return result
 
@@ -243,10 +232,12 @@ class CanonicalizationPipeline:
         return CanonicalizationItemDTO(
             id=item.id,
             type=item.type,
+            signal_origin=item.signal_origin,
             title=item.title,
             description=item.description,
             aliases=list(item.aliases),
-            sources=list(item.sources),
+            source_file_name=item.source_file_name,
+            source_file_type=item.source_file_type,
             cluster_id=item.cluster_id,
         )
 
@@ -255,13 +246,14 @@ class CanonicalizationPipeline:
         return CanonicalizationFeatureDTO(
             id=item.id,
             type=item.type,
+            signal_origin=item.signal_origin,
             title=item.title,
             description=item.description,
             aliases=list(item.aliases),
-            sources=list(item.sources),
+            source_file_name=item.source_file_name,
+            source_file_type=item.source_file_type,
             cluster_id=item.cluster_id,
             tasks=[],
-            user_flows=[],
             apis=[],
-            db_schemas=[],
+            database=[],
         )
