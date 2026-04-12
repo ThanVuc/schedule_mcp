@@ -12,8 +12,8 @@ from docx.oxml.text.paragraph import CT_P
 from docx.table import Table
 from docx.text.paragraph import Paragraph
 
-from application.dtos.common import FileDTO
-from infrastructure.base.llm.gemini_llm import LLMConnector
+from application.const.sprint_generation import DOCX_HEADING_STYLE_REGEX, DOCX_NUMBERED_TEXT_REGEX
+from application.dtos.sprint_generation_dto import IngestionInputFileDTO, IngestionOutputDTO, MarkdownFileDTO
 from infrastructure.base.storage.storage import Storage
 
 
@@ -108,13 +108,13 @@ def _to_markdown_table(df: pd.DataFrame) -> str:
     if df.empty:
         return "(empty table)"
 
-    headers = list(df.columns)
+    headers = [_escape_md_cell(_normalize_text(col)) for col in list(df.columns)]
     header_line = "| " + " | ".join(headers) + " |"
     separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
 
     body_lines: list[str] = []
     for _, row in df.iterrows():
-        cells = [_normalize_text(row[col]) for col in headers]
+        cells = [_escape_md_cell(_normalize_text(row[col])) for col in df.columns]
         body_lines.append("| " + " | ".join(cells) + " |")
 
     return "\n".join([header_line, separator_line, *body_lines])
@@ -192,7 +192,7 @@ def _normalize_list_text(text: str) -> str:
 
 
 def _is_numbered_text(text: str) -> bool:
-    return bool(re.match(r"^\d+[\.|\)]\s+", text))
+    return bool(re.match(DOCX_NUMBERED_TEXT_REGEX, text))
 
 
 def parse_docx(content: bytes) -> str:
@@ -213,7 +213,7 @@ def parse_docx(content: bytes) -> str:
 
             style_name = (block.style.name or "").lower() if block.style else ""
 
-            heading_match = re.search(r"heading\s*(\d+)", style_name)
+            heading_match = re.search(DOCX_HEADING_STYLE_REGEX, style_name)
             if heading_match:
                 level = max(1, min(6, int(heading_match.group(1))))
                 output_lines.append(f"{'#' * level} {text}")
@@ -281,6 +281,12 @@ def parse_excel(content: bytes) -> str:
 def _render_extracted_markdown(object_key: str, content: bytes, mime: str) -> tuple[bytes, str, str]:
     extension = os.path.splitext(object_key)[1].lower()
     file_name = os.path.basename(object_key)
+    markdown_key = re.sub(r"\.[^.]+$", ".md", object_key)
+    if markdown_key == object_key and not object_key.lower().endswith(".md"):
+        markdown_key = f"{object_key}.md"
+
+    if extension == ".md" or "markdown" in mime:
+        return content, "text/markdown", markdown_key
 
     markdown_body: str | None = None
     if extension == ".docx" or "word" in mime:
@@ -289,7 +295,15 @@ def _render_extracted_markdown(object_key: str, content: bytes, mime: str) -> tu
         markdown_body = parse_excel(content)
 
     if markdown_body is None:
-        return content, mime, object_key
+        # Best-effort fallback for plain text-ish inputs.
+        text_like_ext = {".txt", ".csv", ".json", ".yaml", ".yml", ".xml", ".log"}
+        is_text_like = extension in text_like_ext or "text" in mime or "json" in mime or "xml" in mime or "yaml" in mime
+        if is_text_like:
+            markdown_body = content.decode("utf-8", errors="ignore").strip()
+        else:
+            markdown_body = "(unsupported binary content)"
+        if not markdown_body:
+            markdown_body = "(empty content)"
 
     wrapped_markdown = (
         f"# Source File\n\n{file_name}\n\n"
@@ -297,45 +311,43 @@ def _render_extracted_markdown(object_key: str, content: bytes, mime: str) -> tu
         f"{markdown_body}\n"
     )
 
-    markdown_key = re.sub(r"\.[^.]+$", ".md", object_key)
     return wrapped_markdown.encode("utf-8"), "text/markdown", markdown_key
 
 
 class IngestionPipeline:
-    def __init__(self, storage: Storage, llm: LLMConnector, max_concurrency: int = 5):
+    def __init__(self, storage: Storage, max_concurrency: int = 5):
         self.storage = storage
-        self.llm = llm
         self._semaphore = asyncio.Semaphore(max_concurrency)
 
-    async def ingest(self, object_keys: list[str]) -> list[FileDTO]:
+    async def ingest(self, files: list[IngestionInputFileDTO]) -> IngestionOutputDTO:
         tasks = [
-            self._process_object(object_key)
-            for object_key in object_keys
+            self._process_object(file_dto)
+            for file_dto in files
         ]
 
         ingested_objects = await asyncio.gather(*tasks)
 
-        return ingested_objects
+        return IngestionOutputDTO(files=ingested_objects)
 
     # 👇 each file = 1 async task
-    async def _process_object(self, object_key: str) -> FileDTO:
+    async def _process_object(self, file_dto: IngestionInputFileDTO) -> MarkdownFileDTO:
         async with self._semaphore:
             # 1. Download file from R2
-            content, mime = await self.storage.download_with_robust_mime(object_key)
+            content, mime = await self.storage.download_with_robust_mime(file_dto.object_key)
 
             if mime is None:
                 mime = "application/octet-stream"  # default fallback
 
             # 2. Preprocess unsupported office files to markdown for LLM extraction.
-            upload_content, upload_mime, upload_key = _render_extracted_markdown(
-                object_key=object_key,
+            markdown_content, _, markdown_key = _render_extracted_markdown(
+                object_key=file_dto.object_key,
                 content=content,
                 mime=mime,
             )
 
-            # 3. Upload file to LLM and get a reference (e.g. file_id or URL)
-            return await self.llm.upload_file(
-                object_key=upload_key,
-                content=upload_content,
-                mime=upload_mime,
+            return MarkdownFileDTO(
+                file_name=os.path.basename(markdown_key),
+                object_key=markdown_key,
+                size=len(markdown_content),
+                content=markdown_content,
             )

@@ -1,8 +1,11 @@
 import asyncio
-from boostrap import ConsoleBootstrapApplication
+
+from fastembed import TextEmbedding
+from boostrap import BootstrapApplication
 
 def main():
-    asyncio.run(ConsoleBootstrapApplication())
+    asyncio.run(BootstrapApplication())
+
 
 if __name__ == "__main__":
     main()

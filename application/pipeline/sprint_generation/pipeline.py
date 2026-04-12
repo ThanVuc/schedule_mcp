@@ -1,14 +1,16 @@
 
 import asyncio
 
-from application.dtos.common import FileDTO
 from application.dtos.sprint_generation_dto import (
     AISprintGenerationRequestedPayloadDTO,
     AISprintGenerationResultTaskDTO,
+    IngestionInputFileDTO,
+    IngestionOutputDTO,
     CanonicalizationResultDTO,
-    ClassificationResultDTO,
+    ExtractionModelDTO,
+    MarkdownFileDTO,
     NormalizationResultDTO,
-    ReconciliationResultDTO,
+    ReconciliationOutputDTO,
 )
 from application.pipeline.sprint_generation.canonicalization import CanonicalizationPipeline
 from application.pipeline.sprint_generation.classification_and_extraction import ClassifyAndExtractPipeline
@@ -27,14 +29,13 @@ class SprintGenerationPipeline:
         self.max_concurrency = max_concurrency
         self._semaphore = asyncio.Semaphore(self.max_concurrency)
     
-    async def ingest(self, objects_key: list[str]) -> list[FileDTO]:
+    async def ingest(self, files: list[IngestionInputFileDTO]) -> IngestionOutputDTO:
         return await IngestionPipeline(
             storage=self.storage,
-            llm=self.llm,
             max_concurrency=self.max_concurrency,
-        ).ingest(objects_key)
+        ).ingest(files)
 
-    async def classify_and_extract(self, file_dtos: list[FileDTO]) -> list[ClassificationResultDTO]:
+    async def classify_and_extract(self, file_dtos: list[MarkdownFileDTO]) -> list[ExtractionModelDTO]:
         return await ClassifyAndExtractPipeline(
             infra=self._infra,
             max_concurrency=self.max_concurrency,
@@ -42,7 +43,7 @@ class SprintGenerationPipeline:
 
     async def normalize(
         self,
-        classification_results: list[ClassificationResultDTO],
+        classification_results: list[ExtractionModelDTO],
     ) -> NormalizationResultDTO:
         return NormalizationPipeline(
             embedder=self._infra.get_embedder(),
@@ -53,7 +54,7 @@ class SprintGenerationPipeline:
     async def reconcile(
         self,
         normalization_result: NormalizationResultDTO,
-    ) -> ReconciliationResultDTO:
+    ) -> ReconciliationOutputDTO:
         return await ReconciliationPipeline(
             llm=self.llm,
             max_concurrency=self.max_concurrency,
@@ -63,7 +64,7 @@ class SprintGenerationPipeline:
 
     async def canonicalize(
         self,
-        reconciliation_result: ReconciliationResultDTO,
+        reconciliation_result: ReconciliationOutputDTO,
     ) -> CanonicalizationResultDTO:
         return CanonicalizationPipeline(
             embedder=self._infra.get_embedder(),
