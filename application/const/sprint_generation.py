@@ -619,6 +619,57 @@ VALID_TASK_STORY_POINTS = {1, 2, 3, 5, 8}
 TASK_DUE_DATE_REGEX = r"^\d{4}-\d{2}-\d{2}$"
 TASK_MIN_DYNAMIC_FLOOR = 12
 
+TASK_GENERATION_SOURCE_RANK = {
+	SourceFileType.PLANNING: 0,
+	SourceFileType.DESIGN: 1,
+	SourceFileType.REQUIREMENT: 2,
+}
+
+TASK_GENERATION_ORIGIN_RANK = {
+	SignalOrigin.EXPLICIT: 0,
+	SignalOrigin.DERIVED: 1,
+	SignalOrigin.INFERRED: 2,
+}
+
+TASK_GENERATION_TASK_VERBS = {
+	"implement",
+	"create",
+	"design",
+	"update",
+	"delete",
+	"add",
+	"setup",
+	"configure",
+	"verify",
+	"test",
+	"validate",
+	"define",
+}
+
+TASK_GENERATION_GENERIC_WORDS = {
+	"system",
+	"pipeline",
+	"logic",
+	"feature",
+	"module",
+}
+
+TASK_GENERATION_STOPWORDS = {
+	"the",
+	"a",
+	"an",
+	"to",
+	"for",
+	"of",
+	"in",
+	"on",
+	"with",
+	"and",
+	"or",
+	"by",
+	"from",
+}
+
 # Critical-AI semantic dedup controls in task generation stage.
 TASK_SEMANTIC_DEDUP_ENABLED = True
 TASK_SEMANTIC_DEDUP_MAX_TRY = 3

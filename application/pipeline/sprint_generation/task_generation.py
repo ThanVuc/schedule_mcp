@@ -10,8 +10,13 @@ from application.const.sprint_generation import (
     TASK_GENERATION_API_TASK_NAME_REGEX,
     TASK_GENERATION_BEHAVIOR_SUFFIX_REGEX,
     TASK_GENERATION_ENDPOINT_SLASH_COLLAPSE_REGEX,
+    TASK_GENERATION_GENERIC_WORDS,
     TASK_GENERATION_JSON_FENCE_REGEX,
     TASK_GENERATION_METHOD_REWRITE_REGEX,
+    TASK_GENERATION_ORIGIN_RANK,
+    TASK_GENERATION_SOURCE_RANK,
+    TASK_GENERATION_STOPWORDS,
+    TASK_GENERATION_TASK_VERBS,
     TASK_SEMANTIC_DEDUP_ENABLED,
     TASK_SEMANTIC_DEDUP_MAX_TRY,
     TASK_GENERATION_TEXT_SANITIZE_REGEX,
@@ -28,61 +33,10 @@ from application.dtos.sprint_generation_dto import (
     CoverageIssueDTO,
     CoverageSummaryDTO,
 )
+from application.utils.time import timestamp_suffix
 from domain.prompt.task_generation_prompt import BuildTaskExpansionPrompt, BuildTaskGenerationPrompt
 from infrastructure.base.const.infra_const import LLMAgentName, LLMModel
 from infrastructure.base.llm.gemini_llm import LLMConnector
-
-
-SOURCE_RANK = {
-    SourceFileType.PLANNING: 0,
-    SourceFileType.DESIGN: 1,
-    SourceFileType.REQUIREMENT: 2,
-}
-
-ORIGIN_RANK = {
-    SignalOrigin.EXPLICIT: 0,
-    SignalOrigin.DERIVED: 1,
-    SignalOrigin.INFERRED: 2,
-}
-
-TASK_VERBS = {
-    "implement",
-    "create",
-    "design",
-    "update",
-    "delete",
-    "add",
-    "setup",
-    "configure",
-    "verify",
-    "test",
-    "validate",
-    "define",
-}
-
-GENERIC_WORDS = {
-    "system",
-    "pipeline",
-    "logic",
-    "feature",
-    "module",
-}
-
-STOPWORDS = {
-    "the",
-    "a",
-    "an",
-    "to",
-    "for",
-    "of",
-    "in",
-    "on",
-    "with",
-    "and",
-    "or",
-    "by",
-    "from",
-}
 
 
 class TaskGenerationPipeline:
@@ -256,8 +210,8 @@ class TaskGenerationPipeline:
         return sorted(
             items,
             key=lambda item: (
-                ORIGIN_RANK.get(item.signal_origin, 99),
-                SOURCE_RANK.get(item.source_file_type, 99),
+                TASK_GENERATION_ORIGIN_RANK.get(item.signal_origin, 99),
+                TASK_GENERATION_SOURCE_RANK.get(item.source_file_type, 99),
                 item.title.casefold(),
             ),
         )
@@ -614,10 +568,10 @@ class TaskGenerationPipeline:
         return sorted([api for api in implemented_apis if api not in qc_apis])
 
     def _task_intent_key(self, name: str) -> str:
-        tokens = [t for t in self._tokenize(name) if t not in STOPWORDS]
+        tokens = [t for t in self._tokenize(name) if t not in TASK_GENERATION_STOPWORDS]
         if not tokens:
             return ""
-        if tokens[0] in TASK_VERBS:
+        if tokens[0] in TASK_GENERATION_TASK_VERBS:
             tokens = tokens[:1] + sorted(tokens[1:])
         else:
             tokens = sorted(tokens)
@@ -634,10 +588,10 @@ class TaskGenerationPipeline:
             return True
 
         first = next(iter(name_tokens), "")
-        if first in TASK_VERBS and len(name_tokens) <= 1:
+        if first in TASK_GENERATION_TASK_VERBS and len(name_tokens) <= 1:
             return True
 
-        if all(token in GENERIC_WORDS for token in name_tokens):
+        if all(token in TASK_GENERATION_GENERIC_WORDS for token in name_tokens):
             return True
 
         return len(desc) < 20
@@ -767,13 +721,19 @@ class TaskGenerationPipeline:
         if not TASK_SEMANTIC_DEDUP_ENABLED or len(tasks) < 2:
             return tasks
 
-        prompt = self._build_semantic_dedup_prompt(tasks)
+        prompt = self._build_semantic_dedup_prompt()
+        payload_file = await self.llm.upload_file(
+            object_key="task_generation/semantic_dedup_input.json" + timestamp_suffix(),
+            content=json.dumps({"tasks": [task.model_dump() for task in tasks]}, ensure_ascii=False, indent=2).encode("utf-8"),
+            mime="application/json",
+        )
         for attempt in range(1, TASK_SEMANTIC_DEDUP_MAX_TRY + 1):
             try:
                 response_text = await self.llm.generate(
                     prompt=prompt,
-                    model=LLMModel.GEMINI_3_0_FLASH,
+                    model=LLMModel.GEMINI_2_5_FLASH,
                     afc_enabled=False,
+                    files=[payload_file],
                     max_output_tokens=20000,
                     timeout_seconds=90.0,
                     temperature=0.1,
@@ -795,21 +755,17 @@ class TaskGenerationPipeline:
 
         return tasks
 
-    def _build_semantic_dedup_prompt(self, tasks: list[AISprintGenerationResultTaskDTO]) -> str:
-        task_payload = [task.model_dump() for task in tasks]
+    def _build_semantic_dedup_prompt(self) -> str:
         return (
-            "You are Critical AI for strict task deduplication.\n"
-            "Goal: remove semantic duplicates only, keep all unique work items.\n\n"
-            "Careful API endpoint rules (MUST):\n"
-            "1) Never merge tasks that have different endpoint paths.\n"
-            "2) Never merge tasks that have different HTTP methods, EXCEPT PUT/PATCH for the same endpoint and same action.\n"
-            "3) If a PUT and PATCH duplicate pair exists on the same endpoint, keep one task and rewrite method to UPDATE.\n"
-            "4) Keep implementation and verification tasks as separate intents.\n"
-            "5) Preserve source_file_name, source_file_type, and signal_origin from the selected item.\n"
-            "6) Return valid JSON only.\n\n"
-            "Return schema:\n"
-            "{\"tasks\": [ ...same task objects... ]}\n\n"
-            f"INPUT_TASKS_JSON:\n{json.dumps(task_payload, ensure_ascii=False)}"
+            "You are Critical AI for strict task semantic deduplication.\n"
+            "Input is provided as an attached JSON file with schema: {\"tasks\": [...]}.\n"
+            "Rules:\n"
+            "1) Remove semantic duplicates only; keep all unique work.\n"
+            "2) Never merge different endpoint paths.\n"
+            "3) Never merge different HTTP methods, except PUT/PATCH same endpoint+action => UPDATE.\n"
+            "4) Keep Implement and Verify intents separate.\n"
+            "5) Preserve source_file_name, source_file_type, signal_origin from chosen item.\n"
+            "Output only valid JSON with this schema: {\"tasks\": [ ...task objects... ]}."
         )
 
     def _is_semantic_dedup_output_safe(
