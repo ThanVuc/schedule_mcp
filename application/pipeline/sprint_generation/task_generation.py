@@ -41,6 +41,11 @@ from infrastructure.base.llm.gemini_llm import LLMConnector
 
 class TaskGenerationPipeline:
     _API_TASK_NAME_REGEX = re.compile(TASK_GENERATION_API_TASK_NAME_REGEX, flags=re.IGNORECASE)
+    _CRITICAL_SEMANTIC_DEDUP_MODELS = [
+        LLMModel.GEMINI_2_5_FLASH,
+        LLMModel.GEMINI_3_1_FLASH_LITE,
+        LLMModel.GEMINI_3_0_FLASH,
+    ]
 
     def __init__(self, llm: LLMConnector):
         self.llm = llm
@@ -731,7 +736,8 @@ class TaskGenerationPipeline:
             try:
                 response_text = await self.llm.generate(
                     prompt=prompt,
-                    model=LLMModel.GEMINI_2_5_FLASH,
+                    model=self._CRITICAL_SEMANTIC_DEDUP_MODELS[0],
+                    fallback_models=self._CRITICAL_SEMANTIC_DEDUP_MODELS[1:],
                     afc_enabled=False,
                     files=[payload_file],
                     max_output_tokens=20000,

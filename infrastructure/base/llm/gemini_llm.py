@@ -46,6 +46,7 @@ DEFAULT_AGENT_PROFILES: dict[LLMAgentName, LLMAgentProfile] = {
 
 class LLMConnector:
     _GENERATE_MAX_ATTEMPTS = 3
+    _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
     def __init__(self, llm_settings: LLMSettings):
         self.__api_key = llm_settings.api_key
@@ -109,6 +110,7 @@ class LLMConnector:
         self,
         prompt: str,
         model: Optional[LLMModel | str] = None,
+        fallback_models: Optional[list[LLMModel | str]] = None,
         temperature: float = 0.7,
         top_p: float = 0.9,
         top_k: int = 40,
@@ -117,8 +119,13 @@ class LLMConnector:
         afc_enabled: bool = False,
         files: Optional[list[FileDTO]] = None,
     ):
-        resolved_model = self._resolve_model(model)
-        generate_url = self._build_generate_url(resolved_model)
+        primary_model = self._resolve_model(model)
+        model_sequence = [primary_model]
+        if fallback_models:
+            for fallback_model in fallback_models:
+                resolved_fallback = self._resolve_model(fallback_model)
+                if resolved_fallback not in model_sequence:
+                    model_sequence.append(resolved_fallback)
 
         # 1. Cấu hình Headers
         headers = {
@@ -159,33 +166,73 @@ class LLMConnector:
         # 3. Thực hiện gọi API
         timeout = aiohttp.ClientTimeout(total=timeout_seconds)
 
-        backoff_seconds = 1.0
-        for attempt in range(1, self._GENERATE_MAX_ATTEMPTS + 1):
-            try:
-                start = time.monotonic()
-                async with self.__session.post(
-                    generate_url,
-                    json=payload,
-                    headers=headers,
-                    timeout=timeout
-                ) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        content = data['candidates'][0]['content']['parts'][0]['text']
-                        logger.info(
-                            "LLM generate success | model=%s | time=%.2fs | prompt_len=%d | response_len=%d | attempt=%d",
-                            resolved_model.value, time.monotonic() - start, len(prompt), len(content), attempt,
-                        )
-                        return content
+        for model_index, resolved_model in enumerate(model_sequence):
+            generate_url = self._build_generate_url(resolved_model)
+            backoff_seconds = 1.0
 
-                    error_body = await response.text()
-                    is_retryable_status = response.status in (429, 500, 502, 503, 504)
+            for attempt in range(1, self._GENERATE_MAX_ATTEMPTS + 1):
+                try:
+                    start = time.monotonic()
+                    async with self.__session.post(
+                        generate_url,
+                        json=payload,
+                        headers=headers,
+                        timeout=timeout
+                    ) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            content = data['candidates'][0]['content']['parts'][0]['text']
+                            logger.info(
+                                "LLM generate success | model=%s | time=%.2fs | prompt_len=%d | response_len=%d | attempt=%d",
+                                resolved_model.value, time.monotonic() - start, len(prompt), len(content), attempt,
+                            )
+                            return content
 
-                    if is_retryable_status and attempt < self._GENERATE_MAX_ATTEMPTS:
-                        logger.warning(
-                            "LLM generate transient status | model=%s | status=%d | attempt=%d/%d | retry_in=%.1fs",
+                        error_body = await response.text()
+                        is_retryable_status = response.status in self._RETRYABLE_STATUSES
+
+                        if is_retryable_status and attempt < self._GENERATE_MAX_ATTEMPTS:
+                            logger.warning(
+                                "LLM generate transient status | model=%s | status=%d | attempt=%d/%d | retry_in=%.1fs",
+                                resolved_model.value,
+                                response.status,
+                                attempt,
+                                self._GENERATE_MAX_ATTEMPTS,
+                                backoff_seconds,
+                            )
+                            await asyncio.sleep(backoff_seconds)
+                            backoff_seconds *= 2
+                            continue
+
+                        logger.error(
+                            "LLM generate error | model=%s | status=%d | prompt_len=%d | body=%s",
                             resolved_model.value,
                             response.status,
+                            len(prompt),
+                            error_body,
+                        )
+
+                        can_fallback = (
+                            is_retryable_status
+                            and model_index < len(model_sequence) - 1
+                            and attempt == self._GENERATE_MAX_ATTEMPTS
+                        )
+                        if can_fallback:
+                            logger.warning(
+                                "LLM switching fallback model | from=%s | to=%s | status=%d",
+                                resolved_model.value,
+                                model_sequence[model_index + 1].value,
+                                response.status,
+                            )
+                            break
+
+                        raise Exception(f"LLM generate error with status code {response.status}")
+
+                except (asyncio.TimeoutError, aiohttp.ServerDisconnectedError, aiohttp.ClientConnectionError, aiohttp.ClientOSError):
+                    if attempt < self._GENERATE_MAX_ATTEMPTS:
+                        logger.warning(
+                            "LLM generate transient exception | model=%s | attempt=%d/%d | retry_in=%.1fs",
+                            resolved_model.value,
                             attempt,
                             self._GENERATE_MAX_ATTEMPTS,
                             backoff_seconds,
@@ -194,44 +241,30 @@ class LLMConnector:
                         backoff_seconds *= 2
                         continue
 
+                    if model_index < len(model_sequence) - 1:
+                        logger.warning(
+                            "LLM switching fallback model after exception | from=%s | to=%s",
+                            resolved_model.value,
+                            model_sequence[model_index + 1].value,
+                        )
+                        break
+
                     logger.error(
-                        "LLM generate error | model=%s | status=%d | prompt_len=%d | body=%s",
+                        "LLM generate timeout/disconnect | model=%s | timeout=%.1fs | prompt_len=%d | attempts=%d",
                         resolved_model.value,
-                        response.status,
+                        timeout_seconds,
                         len(prompt),
-                        error_body,
-                    )
-                    raise Exception(f"LLM generate error with status code {response.status}")
-
-            except (asyncio.TimeoutError, aiohttp.ServerDisconnectedError, aiohttp.ClientConnectionError, aiohttp.ClientOSError):
-                if attempt < self._GENERATE_MAX_ATTEMPTS:
-                    logger.warning(
-                        "LLM generate transient exception | model=%s | attempt=%d/%d | retry_in=%.1fs",
-                        resolved_model.value,
-                        attempt,
                         self._GENERATE_MAX_ATTEMPTS,
-                        backoff_seconds,
                     )
-                    await asyncio.sleep(backoff_seconds)
-                    backoff_seconds *= 2
-                    continue
-
-                logger.error(
-                    "LLM generate timeout/disconnect | model=%s | timeout=%.1fs | prompt_len=%d | attempts=%d",
-                    resolved_model.value,
-                    timeout_seconds,
-                    len(prompt),
-                    self._GENERATE_MAX_ATTEMPTS,
-                )
-                raise
-            except Exception:
-                logger.exception(
-                    "LLM generate unknown error | model=%s | prompt_len=%d | attempt=%d",
-                    resolved_model.value,
-                    len(prompt),
-                    attempt,
-                )
-                raise
+                    raise
+                except Exception:
+                    logger.exception(
+                        "LLM generate unknown error | model=%s | prompt_len=%d | attempt=%d",
+                        resolved_model.value,
+                        len(prompt),
+                        attempt,
+                    )
+                    raise
 
         raise Exception("LLM generate failed after retries")
 
