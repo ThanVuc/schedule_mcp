@@ -1,10 +1,10 @@
 import asyncio
 
 from fastembed import TextEmbedding
-from boostrap import ConsoleBootstrapApplication
+from boostrap import BootstrapApplication
 
 def main():
-    asyncio.run(ConsoleBootstrapApplication())
+    asyncio.run(BootstrapApplication())
 
 
 if __name__ == "__main__":
