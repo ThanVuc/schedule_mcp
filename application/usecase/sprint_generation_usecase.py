@@ -42,38 +42,38 @@ class SprintGenerationUseCase:
             ingested_objects = await self.sprint_generation_pipeline.ingest(
                 dto.payload.files
             )
-            # self.evidence_manager.save_step_result("ingestion", ingested_objects, "files.json")
+            self.evidence_manager.save_step_result("ingestion", ingested_objects, "files.json")
 
             ## Step 2: Classification & Extraction (1 file = 1 async LLM call)
             classification_results = await self.sprint_generation_pipeline.classify_and_extract(
                 ingested_objects.files
             )
-            # self.evidence_manager.save_step_result("classify_and_extract", classification_results, "classifications.json")
+            self.evidence_manager.save_step_result("classify_and_extract", classification_results, "classifications.json")
 
             # Step 3: Normalization (embedding, similarity, clustering)
             normalization_result = await self.sprint_generation_pipeline.normalize(
                 classification_results,
             )
-            # self.evidence_manager.save_step_result("normalization", normalization_result, "normalized.json")
+            self.evidence_manager.save_step_result("normalization", normalization_result, "normalized.json")
 
             ## Step 4: Reconciliation (cluster filtering + AI merge)
             reconciliation_result = await self.sprint_generation_pipeline.reconcile(
                 normalization_result,
             )
-            # self.evidence_manager.save_step_result("reconciliation", reconciliation_result, "reconciled.json")
+            self.evidence_manager.save_step_result("reconciliation", reconciliation_result, "reconciled.json")
 
             ## Step 5: Canonicalization (feature-centered linking + orphan preserving)
             canonicalization_result = await self.sprint_generation_pipeline.canonicalize(
                 reconciliation_result,
             )
-            # self.evidence_manager.save_step_result("canonicalization", canonicalization_result, "canonicalized.json")
+            self.evidence_manager.save_step_result("canonicalization", canonicalization_result, "canonicalized.json")
 
             # ## Step 6: Task Generation
             generated_tasks = await self.sprint_generation_pipeline.generate_tasks(
                 canonicalization_result=canonicalization_result,
                 payload=dto.payload,
             )
-            # self.evidence_manager.save_step_result("task_generation", generated_tasks, "tasks.json")
+            self.evidence_manager.save_step_result("task_generation", generated_tasks, "tasks.json")
 
             # Build response envelope from pipeline output.
             result_message = self._build_success_result_message(

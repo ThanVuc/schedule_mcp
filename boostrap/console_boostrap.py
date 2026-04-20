@@ -38,7 +38,7 @@ def _build_hardcoded_message() -> AISprintGenerationRequestedMessageDTO:
 			},
 			"files": [
 				{
-					"object_key": "ai-sprint-generation/Design-LLD-Phase1-1775795772430.md",
+					"object_key": "ai-sprint-generation/Requirement_NCKH_Báo cáo.docx",
 					"size": 1024,
 				},
 			],
